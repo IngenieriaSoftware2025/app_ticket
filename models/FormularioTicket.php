@@ -11,9 +11,7 @@ class FormulariTicket extends ActiveRecord {
         'tic_comentario_falla',
         'tic_correo_electronico',
         'form_ticket_num',
-        'form_ticket_num',
-        'form_ticket_num',
-        'form_ticket_num',
+        
 
     ];
 }

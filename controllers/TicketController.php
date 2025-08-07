@@ -203,4 +203,11 @@ class TicketController extends ActiveRecord
         }
         exit;
     }
+
+    public static function misTickets(Router $router) {
+        $titulo = 'Mis Tickets - Sistema de Atención';
+        $router->render('tickets/mis-tickets', [
+            'titulo' => $titulo
+        ]);
+    }
 }

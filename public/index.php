@@ -10,6 +10,8 @@ $router->setBaseURL('/' . $_ENV['APP_NAME']);
 
 // Ruta principal
 $router->get('/', [AppController::class,'index']);
+
+//ruta para mis tickets
 $router->get('/mis-tickets', [TicketController::class,'misTickets']);
 
 // Rutas para tickets

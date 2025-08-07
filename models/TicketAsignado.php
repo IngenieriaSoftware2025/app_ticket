@@ -1,0 +1,26 @@
+<?php
+
+namespace Model;
+
+class TicketAsignado extends ActiveRecord {
+    
+    public static $tabla = 'tickets_asignados';
+    public static $columnasDB = [
+        'tic_id',
+        'tic_numero_ticket',
+        'tic_encargado',
+        'estado_ticket'
+    ];
+
+    public $tic_id;
+    public $tic_numero_ticket;
+    public $tic_encargado;
+    public $estado_ticket;
+
+    public function __construct($argumentos = []) {
+        $this->tic_id = $argumentos['tic_id'] ?? null;
+        $this->tic_numero_ticket = $argumentos['tic_numero_ticket'] ?? '';
+        $this->tic_encargado = $argumentos['tic_encargado'] ?? 0;
+        $this->estado_ticket = $argumentos['estado_ticket'] ?? 0;
+    }
+}

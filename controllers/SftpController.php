@@ -2,7 +2,7 @@
 
 namespace Controllers;
 
-use phpseclib\Net\SFTP;
+use phpseclib3\Net\SFTP;
 use Exception;
 
 class SftpController

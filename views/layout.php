@@ -8,7 +8,7 @@ session_start();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="<?= asset('images/cit.png') ?>" type="image/x-icon">
     <link rel="stylesheet" href="<?= asset('build/styles.css') ?>">
-    <title>Sistema Celulares</title>
+    <title>Sistema de Tickets - AUTOCOM</title>
     <style>
         body {
             background: #f8fbff;
@@ -16,8 +16,6 @@ session_start();
             overflow-x: hidden;
             max-width: 100vw;
         }
-
-
 
         .sidebar {
             position: fixed;
@@ -49,8 +47,6 @@ session_start();
         .sidebar-brand:hover {
             color: #e3f2fd !important;
         }
-
-
 
         .nav-link {
             color: rgba(255, 255, 255, 0.9) !important;
@@ -108,8 +104,6 @@ session_start();
             position: relative;
             overflow: hidden;
         }
-
-
 
         .btn-danger {
             background: linear-gradient(135deg, #dc3545, #bd2130);
@@ -200,8 +194,6 @@ session_start();
             padding: 0 2rem;
         }
 
-
-
         .footer-copyright {
             font-size: 0.95rem;
             font-weight: 500;
@@ -233,80 +225,46 @@ session_start();
 </head>
 <body>
 
-
     <div class="sidebar">
-        <a class="sidebar-brand" href="/proyecto02_macs/inicio">
-            <i class="bi bi-phone-fill" style="font-size: 1.5rem; margin-right: 8px;"></i>
-            MACS
+        <a class="sidebar-brand" href="/app_ticket">
+            <i class="bi bi-ticket-perforated" style="font-size: 1.5rem; margin-right: 8px;"></i>
+             SISTEMA DE TICKETS
         </a>
         
         <ul class="navbar-nav">
             <li class="nav-item">
-                <a class="nav-link" aria-current="page" href="/proyecto02_macs/inicio"><i class="bi bi-house-fill me-2"></i>Inicio</a>
+                <a class="nav-link" aria-current="page" href="/app_ticket"><i class="bi bi-house-fill me-2"></i>Inicio</a>
             </li>
 
             <li class="nav-item">
-                <a class="nav-link px-3" href="/proyecto02_macs/clientes">
-                    <i class="bi bi-people-fill me-2"></i>Clientes
-                </a>
-            </li>
-
-            <?php if ($_SESSION['usuario_rol'] === 'ADMIN'): ?>
-            <li class="nav-item">
-                <a class="nav-link px-3" href="/proyecto02_macs/usuarios">
-                    <i class="bi bi-people-fill me-2"></i>Usuarios/Empleados
+                <a class="nav-link px-3" href="/app_ticket/crear">
+                    <i class="bi bi-plus-circle-fill me-2"></i>Crear Nuevo Ticket
                 </a>
             </li>
 
             <li class="nav-item">
-                <a class="nav-link px-3" href="/proyecto02_macs/marcas">
-                    <i class="bi bi-tags-fill me-2"></i>Marcas
+                <a class="nav-link px-3" href="/app_ticket/mis-tickets">
+                    <i class="bi bi-person-check-fill me-2"></i>Mis Tickets
                 </a>
             </li>
 
             <li class="nav-item">
-                <a class="nav-link px-3" href="/proyecto02_macs/celulares">
-                    <i class="bi bi-phone-fill me-2"></i>Celulares
-                </a>
-            </li>
-            <?php endif; ?>
-
-            <li class="nav-item">
-                <a class="nav-link px-3" href="/proyecto02_macs/inventario">
-                    <i class="bi bi-box-seam-fill me-2"></i>Inventario
+                <a class="nav-link px-3" href="/app_ticket/historial">
+                    <i class="bi bi-clock-fill me-2"></i>Historial Tickets
                 </a>
             </li>
 
             <li class="nav-item">
-                <a class="nav-link px-3" href="/proyecto02_macs/ventas">
-                    <i class="bi bi-cart-fill me-2"></i>Ventas
+                <a class="nav-link px-3" href="/app_ticket/activos">
+                    <i class="bi bi-list-check me-2"></i>Tickets Activos
                 </a>
             </li>
 
             <li class="nav-item">
-                <a class="nav-link px-3" href="/proyecto02_macs/reparaciones">
-                    <i class="bi bi-tools me-2"></i>Reparaciones
+                <a class="nav-link px-3" href="/app_ticket/estadisticas">
+                    <i class="bi bi-graph-up me-2"></i>Estadísticas
                 </a>
             </li>
-
-            <?php if ($_SESSION['usuario_rol'] === 'ADMIN'): ?>
-            <li class="nav-item dropdown-simple">
-                <a class="nav-link px-3" href="#" style="display: flex; align-items: center;">
-                    <i class="bi bi-bar-chart-fill me-2"></i>Reportes<i class="bi bi-chevron-down ms-2" style="font-size: 0.7em;"></i>
-                </a>
-                <ul class="dropdown-content" style="margin: 0;">
-                    <li>
-                        <a class="dropdown-item nav-link text-white" href="/proyecto02_macs/estadisticas"><i class="ms-lg-0 ms-2 bi bi-graph-up me-2"></i>Estadísticas</a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item nav-link text-white" href="/proyecto02_macs/historial"><i class="ms-lg-0 ms-2 bi bi-clock-history me-2"></i>Historial Ventas</a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item nav-link text-white" href="/proyecto02_macs/rutas_actividades"><i class="ms-lg-0 ms-2 bi bi-activity me-2"></i>Rutas Actividades</a>
-                    </li>
-                </ul>
-            </li>
-            <?php endif; ?>
         </ul> 
         
         <div style="padding: 15px 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); margin-top: auto;">
@@ -365,12 +323,12 @@ session_start();
                         timerProgressBar: true
                     });
 
-                    location.href = '/proyecto02_macs/logout';
+                    location.href = '/app_ticket/logout';
                 }
 
             } catch (error) {
                 console.log(error);
-                location.href = '/proyecto02_macs/logout';
+                location.href = '/app_ticket/logout';
             }
         }
         window.logout = logout;

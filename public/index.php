@@ -8,6 +8,7 @@ $router = new Router();
 $router->setBaseURL('/' . $_ENV['APP_NAME']);
 
 $router->get('/', [AppController::class,'index']);
+$router->get('/mis-tickets', [TicketController::class,'misTickets']);
 
 // Comprueba y valida las rutas, que existan y les asigna las funciones del Controlador
 $router->comprobarRutas();

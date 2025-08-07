@@ -340,7 +340,9 @@ $userName = $_SESSION['user'] ?? 'Usuario';
 
 <body>
     <div class="header">
-        <div class="logo">🎫 Sistema de Tickets de Atención al Usuario - AUTOCOM</div>
+        <div class="logo">🎫 Sistema de Tickets de Atención al Usuario <br><br>
+            <h5 class="text-uppercase fw-bold">Reporta problemas, gestiona solicitudes y da seguimiento a todas las incidencias.</h5>
+        </div>
     </div>
     
     <div class="container">
@@ -355,21 +357,19 @@ $userName = $_SESSION['user'] ?? 'Usuario';
             </div>
             </div>
             <p class="text-center text-muted mb-0">
-            Gestiona todos los tickets de soporte y atención al usuario de AUTOCOM
+            Gestiona todos los tickets de soporte y atención al usuario
             </p>
         </div>
         
         <div class="row mb-4">
             <div class="col-12 text-center mb-4">
-                <h2 class="text-uppercase fw-bold">Sistema de Tickets</h2>
-                <p class="text-muted">Reporta problemas, gestiona solicitudes y da seguimiento a todas las incidencias.</p>
             </div>
             
             <!-- CREAR NUEVO TICKET -->
             <div class="col-md-4 mb-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-img-top product-img">
-                        <img src="https://img.freepik.com/vector-gratis/servicio-atencion-cliente-concepto-agente-linea_335657-312.jpg" alt="Crear Ticket" style="display: block;">
+                        <img src="https://lafabricadeinventos.tienda/wp-content/uploads/2021/09/App-Ticket-Electronico-11_resultado.webp" alt="Crear Ticket" style="display: block;">
                     </div>
                     <div class="card-body text-center">
                         <h5 class="card-title fw-bold">
@@ -385,7 +385,7 @@ $userName = $_SESSION['user'] ?? 'Usuario';
             <div class="col-md-4 mb-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-img-top product-img">
-                        <img src="https://img.freepik.com/vector-gratis/concepto-tickets-soporte-tecnico_52683-46013.jpg" alt="Mis Tickets" style="display: block;">
+                        <img src="https://id4e.com/wp-content/uploads/2015/02/content.jpg" alt="Mis Tickets" style="display: block;">
                     </div>
                     <div class="card-body text-center">
                         <h5 class="card-title fw-bold">
@@ -397,114 +397,50 @@ $userName = $_SESSION['user'] ?? 'Usuario';
                 </div>
             </div>
             
-            <!-- ESTADO ACTUAL -->
+            <!-- HISTORIAL -->
             <div class="col-md-4 mb-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-img-top product-img">
-                        <img src="https://img.freepik.com/vector-gratis/ilustracion-concepto-panel-control_114360-1531.jpg" alt="Estado Actual" style="display: block;">
+                        <img src="https://id4e.com/wp-content/uploads/2014/12/BLurb-Cuadrats3.png" alt="Estado Actual" style="display: block;">
                     </div>
                     <div class="card-body text-center">
                         <h5 class="card-title fw-bold">
-                            <i class="bi bi-clock-fill me-2 text-warning"></i>Estado Actual
+                            <i class="bi bi-clock-fill me-2 text-warning"></i>Historial Tickets
                         </h5>
-                        <p class="card-text text-muted">Revisa el estado en tiempo real de tus solicitudes.</p>
-                        <a href="/tickets/estado" class="btn btn-warning">Ver Estado</a>
+                        <p class="card-text text-muted">Revisa el historial de tickets.</p>
+                        <a href="/app_ticket/historial" class="btn btn-warning">Ver Historial</a>
                     </div>
                 </div>
             </div>
-            
-            <!-- COMENTARIOS/HISTORIAL -->
-            <div class="col-md-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-img-top product-img">
-                        <img src="https://img.freepik.com/vector-gratis/concepto-servicio-atencion-cliente-isometrico_23-2148078493.jpg" alt="Comentarios" style="display: block;">
-                    </div>
-                    <div class="card-body text-center">
-                        <h5 class="card-title fw-bold">
-                            <i class="bi bi-chat-dots-fill me-2 text-info"></i>Comentarios/Historial
-                        </h5>
-                        <p class="card-text text-muted">Revisa la comunicación y seguimiento de tickets.</p>
-                        <a href="/tickets/comentarios" class="btn btn-primary">Ver Historial</a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- HISTORIAL NOTIFICACIONES -->
-            <div class="col-md-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-img-top product-img">
-                        <img src="https://img.freepik.com/vector-gratis/notificaciones-push-concepto-telefono-inteligente_23-2148086109.jpg" alt="Notificaciones" style="display: block;">
-                    </div>
-                    <div class="card-body text-center">
-                        <h5 class="card-title fw-bold">
-                            <i class="bi bi-bell-fill me-2 text-secondary"></i>Historial Notificaciones
-                        </h5>
-                        <p class="card-text text-muted">Consulta todas las notificaciones y alertas recibidas.</p>
-                        <a href="/tickets/notificaciones" class="btn btn-success">Ver Notificaciones</a>
-                    </div>
-                </div>
-            </div>
-            
+                 
             <!-- LISTA DE TICKETS ACTIVOS -->
             <div class="col-md-4 mb-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-img-top product-img">
-                        <img src="https://img.freepik.com/vector-gratis/concepto-gestion-tareas_23-2148642077.jpg" alt="Tickets Activos" style="display: block;">
+                        <img src="https://eu.zohocommercecdn.com/Banner%20Home%2019%20-12-.png?storefront_domain=www.moviik.com" alt="Tickets Activos" style="display: block;">
                     </div>
                     <div class="card-body text-center">
                         <h5 class="card-title fw-bold">
                             <i class="bi bi-list-check me-2 text-danger"></i>Lista de Tickets Activos
                         </h5>
                         <p class="card-text text-muted">Administra todos los tickets pendientes y en proceso.</p>
-                        <a href="/tickets/activos" class="btn btn-warning">Gestionar Tickets</a>
+                        <a href="/app_ticket/activos" class="btn btn-primary">Gestionar Tickets</a>
                     </div>
                 </div>
             </div>
             
-            <!-- ESTADOS EN TIEMPO REAL -->
+            <!-- Estadisticas -->
             <div class="col-md-4 mb-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-img-top product-img">
-                        <img src="https://img.freepik.com/vector-gratis/dashboard-analisis-tiempo-real_23-2148650421.jpg" alt="Estados Tiempo Real" style="display: block;">
+                        <img src="https://www.questionpro.com/blog/wp-content/uploads/2020/06/Portada-tipos-de-datos-estadisticos.jpg" alt="Métricas" style="display: block;">
                     </div>
                     <div class="card-body text-center">
                         <h5 class="card-title fw-bold">
-                            <i class="bi bi-activity me-2 text-primary"></i>Estados en Tiempo Real
-                        </h5>
-                        <p class="card-text text-muted">Monitor en vivo del estado de todos los tickets.</p>
-                        <a href="/tickets/tiempo-real" class="btn btn-success">Monitor Live</a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- BÚSQUEDA POR NÚMERO -->
-            <div class="col-md-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-img-top product-img">
-                        <img src="https://img.freepik.com/vector-gratis/concepto-busqueda-lupa_23-2148497814.jpg" alt="Búsqueda" style="display: block;">
-                    </div>
-                    <div class="card-body text-center">
-                        <h5 class="card-title fw-bold">
-                            <i class="bi bi-search me-2 text-success"></i>Búsqueda por Número
-                        </h5>
-                        <p class="card-text text-muted">Localiza rápidamente cualquier ticket por su número.</p>
-                        <a href="/tickets/buscar" class="btn btn-primary">Buscar Ticket</a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- MÉTRICAS GENERALES -->
-            <div class="col-md-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-img-top product-img">
-                        <img src="https://img.freepik.com/vector-gratis/analitica-datos-graficos-estadisticas_24877-56203.jpg" alt="Métricas" style="display: block;">
-                    </div>
-                    <div class="card-body text-center">
-                        <h5 class="card-title fw-bold">
-                            <i class="bi bi-graph-up me-2 text-warning"></i>Métricas Generales
+                            <i class="bi bi-graph-up me-2 text-warning"></i>Estadisticas Generales
                         </h5>
                         <p class="card-text text-muted">Reportes y estadísticas del sistema de tickets.</p>
-                        <a href="/tickets/metricas" class="btn btn-success">Ver Métricas</a>
+                        <a href="/app_ticket/estadisticas" class="btn btn-success">Ver Métricas</a>
                     </div>
                 </div>
             </div>
@@ -512,7 +448,6 @@ $userName = $_SESSION['user'] ?? 'Usuario';
         
         <div class="row mt-5">
             <div class="col-md-6 mx-auto text-center">
-                <a href="/tickets/crear" class="btn btn-primary btn-lg mt-3">Crear mi primer ticket</a><br><br>
             </div>
         </div>
     </div>

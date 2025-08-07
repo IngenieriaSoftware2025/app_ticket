@@ -15,13 +15,10 @@ use Model\Dependencia;
 
 class TicketController {
     
-    // ===========================================
-    // VISTA PRINCIPAL DE TICKETS
-    // ===========================================
     public static function index() {
         $titulo = 'Sistema de Tickets de Soporte';
         $router = new Router();
-        $router->render('tickets/index', [
+        $router->render('crear/index', [
             'titulo' => $titulo
         ]);
     }

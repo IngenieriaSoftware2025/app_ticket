@@ -138,7 +138,7 @@ async function enviarTicket(evento) {
 
     try {
         const appName = window.location.pathname.split('/')[1];
-        const response = await fetch(`/${appName}/ticket/guardar`, {
+        const response = await fetch(/${appName}/ticket/guardar, {
             method: 'POST',
             body: formData
         });

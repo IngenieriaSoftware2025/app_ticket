@@ -1,18 +1,19 @@
 --Tablas provisionales para la app_ticket
 
-CREATE DATABASE app_ticket
-
 CREATE TABLE formulario_ticket (
     form_tick_num VARCHAR(250) PRIMARY KEY,
     form_tic_usu INT NOT NULL, --Catalogo de la persona que esta teniendo el problema
-    tic_dependencia INT NOT NULL, --Dependencia
+    tic_dependencia SMALLINT NOT NULL,--Dependencia
+    tic_app INT NOT NULL,
     tic_comentario_falla TEXT NOT NULL, --Comentario del error
     tic_correo_electronico VARCHAR(250) NOT NULL,
     tic_imagen VARCHAR(250),
     form_fecha_creacion DATETIME YEAR TO SECOND DEFAULT CURRENT YEAR TO SECOND,
     FOREIGN KEY (form_tic_usu) REFERENCES mper(per_catalogo),
-    FOREIGN KEY (tic_dependencia) REFERENCES mdep(dep_llave)
+    FOREIGN KEY (tic_dependencia) REFERENCES mdep(dep_llave),
+    FOREIGN KEY (tic_app) REFERENCES menuautocom(menu_codigo)
 );
+
 
 CREATE TABLE tickets_asignados (
     tic_id SERIAL PRIMARY KEY,

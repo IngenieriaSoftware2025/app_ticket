@@ -105,5 +105,277 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
     </div>
 </div>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<!-- MODAL PARA MOSTRAR DETALLES DEL TICKET -->
+<div id="modalTicket" class="modal-ticket-overlay" style="display: none;">
+    <div class="modal-ticket-container">
+        <div class="modal-ticket-card">
+            <!-- Header del Modal -->
+            <div class="modal-ticket-header">
+                <h4 class="modal-ticket-title" id="ticketModalTitle">Detalles de Ticket</h4>
+            </div>
+
+            <!-- Contenido del Modal -->
+            <div class="modal-ticket-content">
+                <!-- Información del Ticket y Usuario -->
+                <div class="row">
+                    <!-- Columna Izquierda: Información del Ticket -->
+                    <div class="col-md-6">
+                        <div class="info-section">
+                            <h6 class="info-section-title">Información del Ticket</h6>
+                            <div class="info-item">
+                                <strong>Número:</strong> <span id="ticketNumero"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Fecha:</strong> <span id="ticketFecha"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Estado:</strong> 
+                                <span class="badge-estado" id="ticketEstado">CREADO</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna Derecha: Datos del Solicitante -->
+                    <div class="col-md-6">
+                        <div class="info-section">
+                            <h6 class="info-section-title">Solicitante</h6>
+                            <div class="info-item">
+                                <strong>Nombre:</strong> <span id="ticketUsuario"><?= $nombreUsuario ?></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Email:</strong> <span id="ticketEmail"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Dependencia:</strong> <span id="ticketDependencia"><?= $dependenciaUsuario ?? 'No definida' ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Descripción del Problema -->
+                <div class="descripcion-section">
+                    <h6 class="info-section-title">Descripción del Problema</h6>
+                    <div class="descripcion-content" id="ticketDescripcion">
+                        <!-- Aquí se mostrará la descripción -->
+                    </div>
+                </div>
+
+                <!-- Imagen Adjunta (si existe) -->
+                <div id="imagenSection" class="imagen-section" style="display: none;">
+                    <h6 class="info-section-title">Imagen Adjunta</h6>
+                    <div class="imagen-container">
+                        <img id="ticketImagen" class="ticket-imagen" alt="Imagen del problema">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer del Modal -->
+            <div class="modal-ticket-footer">
+                <button type="button" class="btn-cerrar-modal" onclick="cerrarModalTicket()">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos CSS para el Modal -->
+<style>
+/* Overlay del Modal */
+.modal-ticket-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Container del Modal */
+.modal-ticket-container {
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideDown 0.4s ease-out;
+}
+
+/* Card Principal del Modal */
+.modal-ticket-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+/* Header del Modal */
+.modal-ticket-header {
+    background: linear-gradient(135deg, #2c5aa0, #1e3f73);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.modal-ticket-title {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+/* Contenido del Modal */
+.modal-ticket-content {
+    padding: 30px;
+}
+
+/* Secciones de Información */
+.info-section {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #e3f2fd;
+}
+
+.info-section-title {
+    color: #2c5aa0;
+    font-weight: 600;
+    margin-bottom: 15px;
+    font-size: 1rem;
+    border-bottom: 2px solid #e3f2fd;
+    padding-bottom: 8px;
+}
+
+.info-item {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-item strong {
+    color: #1e3f73;
+    min-width: 80px;
+}
+
+/* Badge de Estado */
+.badge-estado {
+    background: #28a745;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Sección de Descripción */
+.descripcion-section {
+    background: #ffffff;
+    border: 2px solid #e3f2fd;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.descripcion-content {
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #2c5aa0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #1e3f73;
+}
+
+/* Sección de Imagen */
+.imagen-section {
+    background: #ffffff;
+    border: 2px solid #e3f2fd;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+}
+
+.imagen-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.ticket-imagen {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(44, 90, 160, 0.2);
+}
+
+/* Footer del Modal */
+.modal-ticket-footer {
+    background: #f8fafc;
+    padding: 20px;
+    text-align: center;
+    border-top: 1px solid #e3f2fd;
+}
+
+/* Botón Cerrar */
+.btn-cerrar-modal {
+    background: linear-gradient(135deg, #6f42c1, #5a32a3);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+}
+
+.btn-cerrar-modal:hover {
+    background: linear-gradient(135deg, #5a32a3, #4c2a91);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(111, 66, 193, 0.4);
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideDown {
+    from { 
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .modal-ticket-container {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .modal-ticket-content {
+        padding: 20px;
+    }
+    
+    .info-section {
+        padding: 15px;
+    }
+}
+</style>
+
 <script src="<?= asset('build/js/ticket/index.js') ?>"></script>

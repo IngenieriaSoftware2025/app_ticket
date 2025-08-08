@@ -1,9 +1,9 @@
-import { validarFormulario, Toast } from '../funciones.js';
+import { Toast } from '../funciones.js';
 import Swal from 'sweetalert2';
 
 document.addEventListener('DOMContentLoaded', () => {
-    const formulario = document.getElementById('formularioTicket');
-    const btnEnviar = document.getElementById('btnEnviar');
+    const formulario = document.getElementById('formTicket');
+    const btnEnviar = document.getElementById('BtnEnviar');
     
     if (!formulario) return;
     
@@ -21,11 +21,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Event listeners para botones
-    const btnLimpiar = document.querySelector('[onclick="limpiarFormulario()"]');
+    const btnLimpiar = document.getElementById('BtnLimpiar');
     if (btnLimpiar) {
-        btnLimpiar.removeAttribute('onclick');
         btnLimpiar.addEventListener('click', limpiarFormulario);
     }
+
+    // Event listener para vista previa de imagen
+    const inputImagen = document.getElementById('tic_imagen');
+    if (inputImagen) {
+        inputImagen.addEventListener('change', mostrarVistaPrevia);
+    }
+
+    // Configurar contador de caracteres
+    configurarContadorCaracteres();
 });
 
 /**
@@ -68,6 +76,10 @@ async function cargarAplicaciones() {
         }
     } catch (error) {
         console.error('Error al cargar aplicaciones:', error);
+        Toast.fire({
+            icon: 'error',
+            title: 'Error al cargar aplicaciones'
+        });
     }
 }
 
@@ -78,18 +90,9 @@ async function enviarFormulario(evento) {
     evento.preventDefault();
     
     const formulario = evento.target;
-    const btnEnviar = document.getElementById('btnEnviar');
+    const btnEnviar = document.getElementById('BtnEnviar');
     
-    // Validar formulario usando la función importada
-    if (!validarFormulario(formulario)) {
-        Toast.fire({
-            icon: 'error',
-            title: 'Por favor complete todos los campos requeridos'
-        });
-        return;
-    }
-    
-    // Validaciones específicas adicionales
+    // Solo usar validaciones específicas (que sí conocen todos los campos)
     if (!validacionesEspecificas(formulario)) {
         return;
     }
@@ -100,24 +103,43 @@ async function enviarFormulario(evento) {
     btnEnviar.disabled = true;
     
     try {
-        // Enviar formulario
-        const respuesta = await fetch(formulario.action || window.location.href, {
+        // URL corregida para enviar el formulario
+        const appName = window.location.pathname.split('/')[1];
+        const url = `/${appName}/ticket/guardar`;
+        
+        const respuesta = await fetch(url, {
             method: 'POST',
             body: new FormData(formulario)
         });
         
-        if (respuesta.ok) {
-            // Si la respuesta es exitosa, recargar la página para mostrar mensajes
-            window.location.reload();
+        const datos = await respuesta.json();
+        
+        if (datos.codigo === 1) {
+            // Éxito - mostrar modal personalizado
+            mostrarModalTicket(datos.data, formulario);
+            
+            // Limpiar formulario después del éxito
+            formulario.reset();
+            limpiarClasesValidacion();
+            cargarAplicaciones(); // Recargar aplicaciones
+            
         } else {
-            throw new Error('Error en la respuesta del servidor');
+            // Error del servidor
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error al crear el ticket',
+                text: datos.mensaje || 'Ocurrió un error inesperado',
+                confirmButtonText: 'Intentar de nuevo'
+            });
         }
         
     } catch (error) {
         console.error('Error al enviar formulario:', error);
-        Toast.fire({
+        await Swal.fire({
             icon: 'error',
-            title: 'Error al crear el ticket. Intente nuevamente.'
+            title: 'Error de conexión',
+            text: 'No se pudo conectar con el servidor. Verifique su conexión e intente nuevamente.',
+            confirmButtonText: 'Entendido'
         });
     } finally {
         // Restaurar botón
@@ -127,35 +149,126 @@ async function enviarFormulario(evento) {
 }
 
 /**
+ * Muestra el modal personalizado con los datos del ticket creado
+ */
+function mostrarModalTicket(datosTicket, formulario) {
+    // Obtener elementos del modal
+    const modal = document.getElementById('modalTicket');
+    const ticketNumero = document.getElementById('ticketNumero');
+    const ticketFecha = document.getElementById('ticketFecha');
+    const ticketEmail = document.getElementById('ticketEmail');
+    const ticketDescripcion = document.getElementById('ticketDescripcion');
+    const imagenSection = document.getElementById('imagenSection');
+    const ticketImagen = document.getElementById('ticketImagen');
+    
+    if (!modal) {
+        console.error('No se encontró el modal con id "modalTicket"');
+        return;
+    }
+    
+    // Llenar datos del ticket
+    if (ticketNumero) ticketNumero.textContent = datosTicket.numero_ticket;
+    if (ticketFecha) ticketFecha.textContent = new Date().toLocaleDateString('es-ES');
+    if (ticketEmail) ticketEmail.textContent = formulario.querySelector('#tic_correo_electronico').value;
+    if (ticketDescripcion) ticketDescripcion.textContent = formulario.querySelector('#tic_comentario_falla').value;
+    
+    // Manejar imagen si existe
+    const inputImagen = formulario.querySelector('#tic_imagen');
+    if (inputImagen && inputImagen.files && inputImagen.files[0] && imagenSection && ticketImagen) {
+        const archivo = inputImagen.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            ticketImagen.src = e.target.result;
+            imagenSection.style.display = 'block';
+        };
+        reader.readAsDataURL(archivo);
+    } else if (imagenSection) {
+        imagenSection.style.display = 'none';
+    }
+    
+    // Mostrar modal
+    modal.style.display = 'flex';
+    
+    // Agregar animación de entrada
+    setTimeout(() => {
+        modal.style.opacity = '1';
+    }, 10);
+}
+
+/**
+ * Cierra el modal personalizado
+ */
+function cerrarModalTicket() {
+    const modal = document.getElementById('modalTicket');
+    if (modal) {
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    }
+}
+
+// Hacer la función global para que pueda ser llamada desde el HTML
+window.cerrarModalTicket = cerrarModalTicket;
+
+/**
  * Validaciones específicas del formulario
  */
 function validacionesEspecificas(formulario) {
     const aplicacion = formulario.querySelector('#tic_app');
-    const catalogoUsuario = formulario.querySelector('#form_tic_usu');
     const email = formulario.querySelector('#tic_correo_electronico');
     const comentario = formulario.querySelector('#tic_comentario_falla');
     
     // Validar aplicación
     if (!aplicacion || !aplicacion.value.trim()) {
         mostrarErrorCampo('tic_app', 'Debe seleccionar una aplicación');
+        aplicacion.focus();
+        Toast.fire({
+            icon: 'error',
+            title: 'Debe seleccionar una aplicación'
+        });
         return false;
     }
     
-    // Validar catálogo de usuario
-    if (catalogoUsuario && catalogoUsuario.value && !Number.isInteger(Number(catalogoUsuario.value))) {
-        mostrarErrorCampo('form_tic_usu', 'El catálogo debe ser un número entero');
+    // Validar email
+    if (!email || !email.value.trim()) {
+        mostrarErrorCampo('tic_correo_electronico', 'El correo electrónico es obligatorio');
+        email.focus();
+        Toast.fire({
+            icon: 'error',
+            title: 'El correo electrónico es obligatorio'
+        });
+        return false;
+    }
+    
+    if (!validarEmail(email.value)) {
+        mostrarErrorCampo('tic_correo_electronico', 'Ingrese un correo electrónico válido');
+        email.focus();
+        Toast.fire({
+            icon: 'error',
+            title: 'Ingrese un correo electrónico válido'
+        });
         return false;
     }
     
     // Validar longitud del comentario
-    if (comentario && comentario.value && comentario.value.trim().length < 15) {
-        mostrarErrorCampo('tic_comentario_falla', 'La descripción debe tener al menos 15 caracteres');
+    if (!comentario || !comentario.value.trim()) {
+        mostrarErrorCampo('tic_comentario_falla', 'La descripción del problema es obligatoria');
+        comentario.focus();
+        Toast.fire({
+            icon: 'error',
+            title: 'La descripción del problema es obligatoria'
+        });
         return false;
     }
     
-    // Validar formato de email
-    if (email && email.value && !validarEmail(email.value)) {
-        mostrarErrorCampo('tic_correo_electronico', 'Ingrese un correo electrónico válido');
+    if (comentario.value.trim().length < 15) {
+        mostrarErrorCampo('tic_comentario_falla', 'La descripción debe tener al menos 15 caracteres');
+        comentario.focus();
+        Toast.fire({
+            icon: 'error',
+            title: 'La descripción debe tener al menos 15 caracteres'
+        });
         return false;
     }
     
@@ -178,13 +291,6 @@ function validarCampo(evento) {
         case 'tic_app':
             if (!campo.value.trim()) {
                 mostrarErrorCampo(campo.id, 'Debe seleccionar una aplicación');
-                return false;
-            }
-            break;
-            
-        case 'form_tic_usu':
-            if (campo.value && !Number.isInteger(Number(campo.value))) {
-                mostrarErrorCampo(campo.id, 'Debe ser un número entero');
                 return false;
             }
             break;
@@ -232,11 +338,14 @@ function mostrarErrorCampo(idCampo, mensaje) {
     campo.classList.remove('is-valid');
     campo.classList.add('is-invalid');
     
-    // Actualizar mensaje de error si existe
-    const feedbackError = campo.parentElement.querySelector('.invalid-feedback');
-    if (feedbackError) {
-        feedbackError.textContent = mensaje;
+    // Buscar o crear mensaje de error
+    let feedbackError = campo.parentElement.querySelector('.invalid-feedback');
+    if (!feedbackError) {
+        feedbackError = document.createElement('div');
+        feedbackError.className = 'invalid-feedback';
+        campo.parentElement.appendChild(feedbackError);
     }
+    feedbackError.textContent = mensaje;
 }
 
 /**
@@ -248,6 +357,21 @@ function mostrarCampoValido(idCampo) {
     
     campo.classList.remove('is-invalid');
     campo.classList.add('is-valid');
+}
+
+/**
+ * Limpia todas las clases de validación
+ */
+function limpiarClasesValidacion() {
+    const formulario = document.getElementById('formTicket');
+    const campos = formulario.querySelectorAll('input, select, textarea');
+    campos.forEach(campo => {
+        campo.classList.remove('is-valid', 'is-invalid');
+    });
+    
+    // Limpiar mensajes de error
+    const mensajesError = formulario.querySelectorAll('.invalid-feedback');
+    mensajesError.forEach(mensaje => mensaje.remove());
 }
 
 /**
@@ -265,14 +389,16 @@ function limpiarFormulario() {
         cancelButtonText: 'Cancelar'
     }).then((resultado) => {
         if (resultado.isConfirmed) {
-            const formulario = document.getElementById('formularioTicket');
+            const formulario = document.getElementById('formTicket');
             formulario.reset();
             
-            // Limpiar clases de validación
-            const campos = formulario.querySelectorAll('input, select, textarea');
-            campos.forEach(campo => {
-                campo.classList.remove('is-valid', 'is-invalid');
-            });
+            limpiarClasesValidacion();
+            
+            // Limpiar vista previa de imagen
+            const contenedorVistaPrevia = document.getElementById('contenedorVistaPrevia');
+            if (contenedorVistaPrevia) {
+                contenedorVistaPrevia.classList.add('d-none');
+            }
             
             // Recargar aplicaciones después de limpiar
             cargarAplicaciones();
@@ -300,29 +426,23 @@ function validarEmail(email) {
 }
 
 /**
- * Contador de caracteres para textarea
+ * Configurar contador de caracteres para textarea
  */
 function configurarContadorCaracteres() {
     const textarea = document.getElementById('tic_comentario_falla');
-    if (!textarea) return;
+    const contador = document.getElementById('contadorCaracteres');
     
-    // Crear elemento contador
-    const contador = document.createElement('div');
-    contador.className = 'form-text text-end';
-    contador.style.fontSize = '0.875rem';
-    
-    // Insertar después del textarea
-    textarea.parentNode.insertBefore(contador, textarea.nextSibling);
+    if (!textarea || !contador) return;
     
     // Función para actualizar contador
     const actualizarContador = () => {
         const longitud = textarea.value.length;
-        contador.textContent = `${longitud} caracteres`;
+        contador.textContent = longitud;
         
         if (longitud < 15) {
-            contador.className = 'form-text text-end text-danger';
+            contador.parentElement.className = 'text-danger';
         } else {
-            contador.className = 'form-text text-end text-muted';
+            contador.parentElement.className = 'text-muted';
         }
     };
     
@@ -334,5 +454,43 @@ function configurarContadorCaracteres() {
     actualizarContador();
 }
 
-// Configurar contador cuando se carga la página
-document.addEventListener('DOMContentLoaded', configurarContadorCaracteres);
+/**
+ * Mostrar vista previa de imagen seleccionada
+ */
+function mostrarVistaPrevia(evento) {
+    const archivo = evento.target.files[0];
+    const contenedor = document.getElementById('contenedorVistaPrevia');
+    const imagen = document.getElementById('vistaPrevia');
+    
+    if (!archivo || !contenedor || !imagen) return;
+    
+    // Validar que sea una imagen
+    if (!archivo.type.startsWith('image/')) {
+        Toast.fire({
+            icon: 'error',
+            title: 'Solo se permiten archivos de imagen'
+        });
+        evento.target.value = '';
+        contenedor.classList.add('d-none');
+        return;
+    }
+    
+    // Validar tamaño (8MB)
+    if (archivo.size > 8 * 1024 * 1024) {
+        Toast.fire({
+            icon: 'error',
+            title: 'La imagen no puede ser mayor a 8MB'
+        });
+        evento.target.value = '';
+        contenedor.classList.add('d-none');
+        return;
+    }
+    
+    // Mostrar vista previa
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        imagen.src = e.target.result;
+        contenedor.classList.remove('d-none');
+    };
+    reader.readAsDataURL(archivo);
+}

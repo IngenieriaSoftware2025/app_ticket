@@ -30,7 +30,7 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
                         </div>
                     </div>
 
-                    <form id="formTicket" class="p-4 bg-white rounded-3 shadow-sm border" enctype="multipart/form-data">
+                    <form id="formTicket" method="POST" action="/<?= $_ENV['APP_NAME'] ?>/ticket/guardar" class="p-4 bg-white rounded-3 shadow-sm border" enctype="multipart/form-data">
                         <!-- Campos ocultos con datos de sesión -->
                         <input type="hidden" name="form_tic_usu" value="<?= $catalogoUsuario ?>">
                         <input type="hidden" name="tic_dependencia" value="<?= $dependenciaUsuario ?>">
@@ -43,6 +43,7 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
                                 <select class="form-control form-control-lg" id="tic_app" name="tic_app" required>
                                     <option value="">Seleccione la aplicación con problemas...</option>
                                 </select>
+                                <div class="invalid-feedback"></div>
                                 <div class="form-text">Seleccione la aplicación que presenta el problema</div>
                             </div>
                         </div>
@@ -53,6 +54,7 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
                                     <i class="bi bi-envelope me-2"></i>Correo Electrónico
                                 </label>
                                 <input type="email" class="form-control form-control-lg" id="tic_correo_electronico" name="tic_correo_electronico" placeholder="ejemplo@correo.com" maxlength="250" required>
+                                <div class="invalid-feedback"></div>
                                 <div class="form-text">Correo donde recibirá las actualizaciones del ticket</div>
                             </div>
                         </div>
@@ -63,6 +65,7 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
                                     <i class="bi bi-chat-text me-2"></i>Descripción del Problema
                                 </label>
                                 <textarea class="form-control" id="tic_comentario_falla" name="tic_comentario_falla" rows="6" maxlength="2000" placeholder="Describa detalladamente el problema que está experimentando..." required></textarea>
+                                <div class="invalid-feedback"></div>
                                 <div class="d-flex justify-content-between">
                                     <div class="form-text">
                                         <i class="bi bi-info-circle me-1"></i>Sea específico para una mejor atención
@@ -81,6 +84,7 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
                                     <i class="bi bi-image me-2"></i>Imagen del Problema (Opcional)
                                 </label>
                                 <input type="file" class="form-control form-control-lg" id="tic_imagen" name="tic_imagen" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                                <div class="invalid-feedback"></div>
                                 <div class="form-text">
                                     <strong>Formatos permitidos:</strong> JPG, PNG, GIF, WEBP | 
                                     <strong>Tamaño máximo:</strong> 8MB

@@ -376,7 +376,7 @@ $userName = $_SESSION['user'] ?? 'Usuario';
                             <i class="bi bi-plus-circle-fill me-2 text-primary"></i>Crear Nuevo Ticket
                         </h5>
                         <p class="card-text text-muted">Reporta un problema con alguna aplicación de AUTOCOM.</p>
-                        <a href="/app_ticket/crear" class="btn btn-primary">Crear Ticket</a>
+                        <a href="/app_ticket/ticket" class="btn btn-primary">Crear Ticket</a>
                     </div>
                 </div>
             </div>

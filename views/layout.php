@@ -255,12 +255,6 @@ session_start();
             </li>
 
             <li class="nav-item">
-                <a class="nav-link px-3" href="/app_ticket/activos">
-                    <i class="bi bi-list-check me-2"></i>Tickets Activos
-                </a>
-            </li>
-
-            <li class="nav-item">
                 <a class="nav-link px-3" href="/app_ticket/estadisticas">
                     <i class="bi bi-graph-up me-2"></i>Estadísticas
                 </a>

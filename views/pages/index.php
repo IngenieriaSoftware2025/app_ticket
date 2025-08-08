@@ -412,23 +412,7 @@ $userName = $_SESSION['user'] ?? 'Usuario';
                     </div>
                 </div>
             </div>
-                 
-            <!-- LISTA DE TICKETS ACTIVOS -->
-            <div class="col-md-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-img-top product-img">
-                        <img src="https://eu.zohocommercecdn.com/Banner%20Home%2019%20-12-.png?storefront_domain=www.moviik.com" alt="Tickets Activos" style="display: block;">
-                    </div>
-                    <div class="card-body text-center">
-                        <h5 class="card-title fw-bold">
-                            <i class="bi bi-list-check me-2 text-danger"></i>Lista de Tickets Activos
-                        </h5>
-                        <p class="card-text text-muted">Administra todos los tickets pendientes y en proceso.</p>
-                        <a href="/app_ticket/activos" class="btn btn-primary">Gestionar Tickets</a>
-                    </div>
-                </div>
-            </div>
-            
+                          
             <!-- Estadisticas -->
             <div class="col-md-4 mb-4">
                 <div class="card border-0 shadow-sm h-100">
@@ -440,7 +424,7 @@ $userName = $_SESSION['user'] ?? 'Usuario';
                             <i class="bi bi-graph-up me-2 text-warning"></i>Estadisticas Generales
                         </h5>
                         <p class="card-text text-muted">Reportes y estadísticas del sistema de tickets.</p>
-                        <a href="/app_ticket/estadisticas" class="btn btn-success">Ver Métricas</a>
+                        <a href="/app_ticket/estadisticas" class="btn btn-primary">Ver Métricas</a>
                     </div>
                 </div>
             </div>

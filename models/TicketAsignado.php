@@ -2,25 +2,34 @@
 
 namespace Model;
 
+use Model\ActiveRecord;
+
 class TicketAsignado extends ActiveRecord {
     
     public static $tabla = 'tickets_asignados';
-    public static $columnasDB = [
-        'tic_id',
+    public static $idTabla = 'tic_id';
+    public static $columnasDB = 
+    [
         'tic_numero_ticket',
         'tic_encargado',
         'estado_ticket'
     ];
-
+    
     public $tic_id;
     public $tic_numero_ticket;
     public $tic_encargado;
     public $estado_ticket;
+    
+    public function __construct($ticket = [])
+    {
+        $this->tic_id = $ticket['tic_id'] ?? null;
+        $this->tic_numero_ticket = $ticket['tic_numero_ticket'] ?? '';
+        $this->tic_encargado = $ticket['tic_encargado'] ?? 0;
+        $this->estado_ticket = $ticket['estado_ticket'] ?? 1;
+    }
 
-    public function __construct($argumentos = []) {
-        $this->tic_id = $argumentos['tic_id'] ?? null;
-        $this->tic_numero_ticket = $argumentos['tic_numero_ticket'] ?? '';
-        $this->tic_encargado = $argumentos['tic_encargado'] ?? 0;
-        $this->estado_ticket = $argumentos['estado_ticket'] ?? 0;
+    public static function EliminarTicketAsignado($id){
+        $sql = "DELETE FROM tickets_asignados WHERE tic_id = $id";
+        return self::SQL($sql);
     }
 }

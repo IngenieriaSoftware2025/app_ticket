@@ -12,13 +12,13 @@ class TicketController extends ActiveRecord
 
     public static function renderizarPagina(Router $router)
     {
-        hasPermission(['ADMIN', 'EMPLEADO']);
+        //hasPermission(['ADMIN', 'EMPLEADO']);
         $router->render('ticket/index', []);
     }
 
     public static function guardarAPI()
     {
-        hasPermissionApi(['ADMIN', 'EMPLEADO']);
+        //hasPermissionApi(['ADMIN', 'EMPLEADO']);
         getHeadersApi();
     
         

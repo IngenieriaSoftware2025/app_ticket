@@ -13,7 +13,7 @@ class FormularioTicket extends ActiveRecord {
         'tic_comentario_falla',
         'tic_correo_electronico',
         'tic_imagen',
-        'form_fecha_creacion'
+        //'form_fecha_creacion'
     ];
 
     public $form_tick_num;

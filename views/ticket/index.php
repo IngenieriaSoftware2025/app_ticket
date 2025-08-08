@@ -37,6 +37,18 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
                         
                         <div class="row g-4 mb-3">
                             <div class="col-md-12">
+                                <label for="tic_app" class="form-label">
+                                    <i class="bi bi-app-indicator me-2"></i>Aplicación con Problema
+                                </label>
+                                <select class="form-control form-control-lg" id="tic_app" name="tic_app" required>
+                                    <option value="">Seleccione la aplicación con problemas...</option>
+                                </select>
+                                <div class="form-text">Seleccione la aplicación que presenta el problema</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-4 mb-3">
+                            <div class="col-md-12">
                                 <label for="tic_correo_electronico" class="form-label">
                                     <i class="bi bi-envelope me-2"></i>Correo Electrónico
                                 </label>

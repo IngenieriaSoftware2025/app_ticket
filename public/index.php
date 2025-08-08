@@ -19,10 +19,13 @@ $router->get('/mis-tickets', [TicketController::class,'misTickets']);
 // Rutas para tickets
 $router->get('/ticket', [TicketController::class,'renderizarPagina']);
 $router->post('/ticket/guardar', [TicketController::class,'guardarAPI']);
+$router->get('/ticket/aplicaciones', [TicketController::class, 'obtenerAplicacionesAPI']);
+
 
 //estadisticas
 $router->get('/estadisticas', [EstadisticasController::class,'renderizarPagina']);
 
 
-// Comprueba y valida las rutas, que existan y les asigna las funciones del Controlador
+
+
 $router->comprobarRutas();

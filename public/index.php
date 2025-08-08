@@ -20,6 +20,8 @@ $router->get('/mis-tickets', [EstadoTicketController::class,'renderizarPagina'])
 // Rutas para tickets
 $router->get('/ticket', [TicketController::class,'renderizarPagina']);
 $router->post('/ticket/guardar', [TicketController::class,'guardarAPI']);
+$router->get('/ticket/aplicaciones', [TicketController::class, 'obtenerAplicacionesAPI']);
+
 
 //estado-tickets
 $router->get('/estado-tickets', [EstadoTicketController::class, 'renderizarPagina']);
@@ -35,5 +37,6 @@ $router->post('/estado-tickets/cambiarEstadoAPI', [EstadoTicketController::class
 $router->get('/estadisticas', [EstadisticasController::class,'renderizarPagina']);
 
 
-// Comprueba y valida las rutas, que existan y les asigna las funciones del Controlador
+
+
 $router->comprobarRutas();

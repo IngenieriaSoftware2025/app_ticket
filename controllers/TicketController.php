@@ -47,6 +47,16 @@ class TicketController extends ActiveRecord
         }
         */
 
+        // Validar aplicación
+        if (empty($_POST['tic_app'])) {
+            http_response_code(400);
+            echo json_encode([
+                'codigo' => 0,
+                'mensaje' => 'La aplicación es obligatoria'
+            ]);
+            exit;
+        }
+
         // Validar correo electrónico
         $_POST['tic_correo_electronico'] = filter_var($_POST['tic_correo_electronico'], FILTER_SANITIZE_EMAIL);
         if (!filter_var($_POST['tic_correo_electronico'], FILTER_VALIDATE_EMAIL)){
@@ -211,5 +221,31 @@ class TicketController extends ActiveRecord
         $router->render('tickets/mis-tickets', [
             'titulo' => $titulo
         ]);
+    }
+
+    /**
+     * Obtiene las aplicaciones activas desde la tabla menuautocom
+     */
+    public static function obtenerAplicacionesAPI() {
+        getHeadersApi();
+        
+        try {
+            $consulta = "SELECT menu_codigo, menu_descr FROM menuautocom WHERE menu_situacion = 1 ORDER BY menu_descr";
+            $aplicaciones = FormularioTicket::fetchArray($consulta);
+            
+            http_response_code(200);
+            echo json_encode([
+                'codigo' => 1,
+                'mensaje' => 'Aplicaciones obtenidas correctamente',
+                'data' => $aplicaciones
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'codigo' => 0,
+                'mensaje' => 'Error al obtener aplicaciones: ' . $e->getMessage()
+            ]);
+        }
+        exit;
     }
 }

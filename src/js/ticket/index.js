@@ -37,6 +37,20 @@ function configurarEventos() {
 
     // Limpiar formulario
     document.getElementById('BtnLimpiar').addEventListener('click', limpiarFormulario);
+
+    // Cerrar modal con tecla ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            cerrarModalTicket();
+        }
+    });
+
+    // Cerrar modal al hacer clic fuera del contenido
+    document.getElementById('modalTicket')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            cerrarModalTicket();
+        }
+    });
 }
 
 function mostrarVistaPrevia(evento) {
@@ -138,7 +152,7 @@ async function enviarTicket(evento) {
 
     try {
         const appName = window.location.pathname.split('/')[1];
-        const response = await fetch(/${appName}/ticket/guardar, {
+        const response = await fetch(`/${appName}/ticket/guardar`, {
             method: 'POST',
             body: formData
         });
@@ -146,24 +160,19 @@ async function enviarTicket(evento) {
         const data = await response.json();
 
         if (data.codigo == 1) {
-            await Swal.fire({
-                icon: 'success',
-                title: '¡Ticket Enviado Exitosamente!',
-                html: `
-                    <div class="text-center">
-                        <h4 class="text-primary mb-3">Número de Ticket Generado</h4>
-                        <div class="bg-light p-3 rounded mb-3">
-                            <h2 class="text-primary mb-0">${data.data.numero_ticket}</h2>
-                        </div>
-                        <p class="mb-0">Guarde este número para dar seguimiento a su solicitud</p>
-                    </div>
-                `,
-                confirmButtonText: 'Entendido',
-                timer: 10000,
-                timerProgressBar: true
+            // MOSTRAR MODAL EN LUGAR DEL SWEETALERT
+            mostrarModalTicket({
+                numeroTicket: data.data.numero_ticket,
+                correo: correo,
+                descripcion: descripcion,
+                imagen: obtenerImagenSeleccionada()
             });
 
-            limpiarFormulario();
+            // Limpiar formulario después de mostrar el modal
+            setTimeout(() => {
+                limpiarFormulario();
+            }, 500);
+
         } else {
             await Swal.fire({
                 icon: 'error',
@@ -187,6 +196,75 @@ async function enviarTicket(evento) {
     }
 }
 
+function mostrarModalTicket(datosTicket) {
+    // Poblar datos del modal
+    document.getElementById('ticketModalTitle').textContent = `Detalles de Ticket ${datosTicket.numeroTicket}`;
+    document.getElementById('ticketNumero').textContent = datosTicket.numeroTicket;
+    document.getElementById('ticketFecha').textContent = obtenerFechaActual();
+    document.getElementById('ticketEmail').textContent = datosTicket.correo;
+    document.getElementById('ticketDescripcion').textContent = datosTicket.descripcion;
+
+    // Mostrar imagen si existe
+    const imagenSection = document.getElementById('imagenSection');
+    const ticketImagen = document.getElementById('ticketImagen');
+    
+    if (datosTicket.imagen) {
+        ticketImagen.src = datosTicket.imagen;
+        imagenSection.style.display = 'block';
+    } else {
+        imagenSection.style.display = 'none';
+    }
+
+    // Mostrar el modal
+    const modal = document.getElementById('modalTicket');
+    modal.style.display = 'flex';
+    
+    // Añadir animación de entrada
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 50);
+
+    // Enfocar el modal para accesibilidad
+    modal.focus();
+}
+
+function cerrarModalTicket() {
+    const modal = document.getElementById('modalTicket');
+    
+    if (modal && modal.style.display !== 'none') {
+        // Animación de salida
+        modal.style.animation = 'fadeOut 0.3s ease-out';
+        
+        setTimeout(() => {
+            modal.style.display = 'none';
+            modal.style.animation = '';
+            modal.classList.remove('show');
+        }, 300);
+    }
+}
+
+function obtenerImagenSeleccionada() {
+    const inputImagen = document.getElementById('tic_imagen');
+    const vistaPrevia = document.getElementById('vistaPrevia');
+    
+    if (inputImagen.files && inputImagen.files[0] && vistaPrevia.src) {
+        return vistaPrevia.src;
+    }
+    
+    return null;
+}
+
+function obtenerFechaActual() {
+    const ahora = new Date();
+    const dia = ahora.getDate().toString().padStart(2, '0');
+    const mes = (ahora.getMonth() + 1).toString().padStart(2, '0');
+    const año = ahora.getFullYear();
+    const horas = ahora.getHours().toString().padStart(2, '0');
+    const minutos = ahora.getMinutes().toString().padStart(2, '0');
+    
+    return `${dia}/${mes}/${año} ${horas}:${minutos}`;
+}
+
 function limpiarFormulario() {
     // Limpiar el formulario
     document.getElementById('formTicket').reset();
@@ -201,22 +279,28 @@ function limpiarFormulario() {
     const textarea = document.getElementById('tic_comentario_falla');
     textarea.classList.remove('border-success', 'border-warning', 'border-danger');
     
-    // Mensaje de confirmación
-    const Toast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true
-    });
+    // Mensaje de confirmación (solo si no hay modal visible)
+    const modal = document.getElementById('modalTicket');
+    if (!modal || modal.style.display === 'none') {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true
+        });
 
-    Toast.fire({
-        icon: 'info',
-        title: 'Formulario limpiado correctamente'
-    });
+        Toast.fire({
+            icon: 'info',
+            title: 'Formulario limpiado correctamente'
+        });
+    }
 }
 
 function validarCorreoElectronico(correo) {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(correo);
 }
+
+// Hacer la función cerrarModalTicket global para que pueda ser llamada desde el HTML
+window.cerrarModalTicket = cerrarModalTicket;

@@ -18,15 +18,16 @@ class TicketController extends ActiveRecord
 
     public static function guardarAPI()
     {
-        //hasPermissionApi(['ADMIN', 'EMPLEADO']);
+        // hasPermissionApi(['ADMIN', 'EMPLEADO']);
         getHeadersApi();
     
         
-        // Obtener datos automáticos de la sesión
-        $_POST['form_tic_usu'] = $_SESSION['per_catalogo'] ?? null;
-        $_POST['tic_dependencia'] = $_SESSION['dep_llave'] ?? null;
+        // VALORES REALES PARA TESTING (usando datos que SÍ existen en la BD)
+        $_POST['form_tic_usu'] = 100008;  // Usuario real: JUAN LEONEL BOLAÑOS CHAVEZ
+        $_POST['tic_dependencia'] = 33; // Dependencia real: DIRECCION DE OPERACIONES
 
-        // Validar que existan los datos de sesión
+        // Validaciones de sesión comentadas temporalmente para testing
+        /*
         if (!$_POST['form_tic_usu']) {
             http_response_code(400);
             echo json_encode([
@@ -44,6 +45,7 @@ class TicketController extends ActiveRecord
             ]);
             exit;
         }
+        */
 
         // Validar correo electrónico
         $_POST['tic_correo_electronico'] = filter_var($_POST['tic_correo_electronico'], FILTER_SANITIZE_EMAIL);

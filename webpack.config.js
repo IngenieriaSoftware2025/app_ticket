@@ -33,6 +33,14 @@ module.exports = {
         test: /\.(png|svg|jpe?g|gif)$/,
         type: 'asset/resource',
       },
+      // Regla para procesar fuentes de Bootstrap Icons
+      {
+        test: /\.(woff|woff2|eot|ttf|otf)$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'fonts/[name][ext]'
+        }
+      }
     ]
   }
 };

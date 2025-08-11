@@ -30,7 +30,7 @@ CREATE TABLE historial_incidentes_tickets (
     hist_tic_encargado INT NOT NULL, --Catalgo de la persona encargada
     hist_tic_solicitante INT NOT NULL, --Catalogo de la persona que tiene el problema
     hist_ticket VARCHAR(250) NOT NULL,  --Ticket del formulario creado donde esta almacenado toda la información del error
-    hist_dependencia INT NOT NULL,      
+    hist_dependencia SMALLINT NOT NULL,      
     hist_tic_fecha_inicio DATETIME YEAR TO SECOND,
     hist_tic_fecha_finalizacion DATETIME YEAR TO SECOND,
     FOREIGN KEY (hist_ticket) REFERENCES formulario_ticket(form_tick_num),

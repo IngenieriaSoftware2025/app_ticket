@@ -62,9 +62,6 @@ if ($catalogoUsuario) {
                             <div class="col-md-6">
                                 <strong><i class="bi bi-building me-2"></i>Dependencia:</strong> <?= $nombreDependencia ?>
                             </div>
-                            <div class="col-md-6">
-                                <strong><i class="bi bi-envelope-fill me-2"></i>Correo:</strong> <span class="text-muted">Se ingresa en el formulario</span>
-                            </div>
                         </div>
                     </div>
 

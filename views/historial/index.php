@@ -5,29 +5,47 @@
                 <div class="card-body">
                     <div class="mb-4 text-center">
                         <h5 class="fw-bold text-secondary mb-2">¡Gestión de Tickets de Soporte!</h5>
-                        <h3 class="fw-bold text-primary mb-0">TICKETS REGISTRADOS EN EL SISTEMA</h3>
+                        <h3 class="fw-bold text-primary mb-0">HISTORIAL DE TICKETS</h3>
+                    </div>
+
+                    <!-- Botones de navegación -->
+                    <div class="row mb-4">
+                        <div class="col-12 text-center">
+                            <div class="btn-group" role="group" aria-label="Navegación de historial">
+                                <button type="button" class="btn btn-primary btn-lg px-4" id="btnCreados">
+                                    <i class="bi bi-plus-circle me-2"></i>CREADOS
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-lg px-4" id="btnFinalizados">
+                                    <i class="bi bi-check-circle me-2"></i>FINALIZADOS
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Filtros -->
                     <div class="row mb-4">
-                        <div class="col-md-4">
-                            <label for="filtroEstado" class="form-label">Filtrar por Estado</label>
-                            <select class="form-select" id="filtroEstado">
-                                <option value="">Todos los estados</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label for="filtroFechaInicio" class="form-label">Fecha Inicio</label>
                             <input type="date" class="form-control" id="filtroFechaInicio">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label for="filtroFechaFin" class="form-label">Fecha Fin</label>
                             <input type="date" class="form-control" id="filtroFechaFin">
                         </div>
                     </div>
 
+                    <!-- Indicador de vista actual -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="alert alert-info text-center" id="indicadorVista">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <span id="textoIndicador">Mostrando tickets creados</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover table-bordered align-middle rounded-3 overflow-hidden w-100" id="TableEstadoTickets" style="width: 100% !important;">
+                        <table class="table table-striped table-hover table-bordered align-middle rounded-3 overflow-hidden w-100" id="TableHistorialTickets" style="width: 100% !important;">
                             <thead>
                                 <tr>
                                     <th>No.</th>
@@ -95,4 +113,4 @@
     </div>
 </div>
 
-<script src="<?= asset('build/js/estadoticket/index.js') ?>"></script>
+<script src="<?= asset('build/js/historial/index.js') ?>"></script>

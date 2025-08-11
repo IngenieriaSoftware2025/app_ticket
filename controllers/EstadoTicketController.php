@@ -102,7 +102,7 @@ class EstadoTicketController extends ActiveRecord
             $fecha_fin = isset($_GET['fecha_fin']) ? $_GET['fecha_fin'] : null;
             $estado = isset($_GET['estado']) ? $_GET['estado'] : null;
 
-            $condiciones = ["ta.tic_id IS NOT NULL"];
+            $condiciones = ["ft.form_tick_num IS NOT NULL"];
 
             if ($fecha_inicio) {
                 $condiciones[] = "ft.form_fecha_creacion >= '{$fecha_inicio}'";
@@ -112,26 +112,60 @@ class EstadoTicketController extends ActiveRecord
                 $condiciones[] = "ft.form_fecha_creacion <= '{$fecha_fin}'";
             }
 
-            if ($estado) {
-                $condiciones[] = "ta.estado_ticket = {$estado}";
-            }
-
             $where = implode(" AND ", $condiciones);
-            $sql = "SELECT ta.*, ft.form_tick_num, ft.tic_comentario_falla, ft.tic_correo_electronico, 
-                           ft.form_fecha_creacion, ft.tic_imagen,
+            
+            // Consulta simplificada - primero obtener todos los tickets
+            $sql = "SELECT ft.form_tick_num, 
+                           ft.tic_comentario_falla, 
+                           ft.tic_correo_electronico, 
+                           ft.form_fecha_creacion, 
+                           ft.tic_imagen,
+                           ft.form_tic_usu,
                            mp_solicitante.per_nom1 || ' ' || mp_solicitante.per_nom2 || ' ' || mp_solicitante.per_ape1 AS solicitante_nombre,
-                           mp_encargado.per_nom1 || ' ' || mp_encargado.per_nom2 || ' ' || mp_encargado.per_ape1 AS encargado_nombre,
-                           et.est_tic_desc AS estado_descripcion,
                            md.dep_desc_lg AS dependencia_nombre
-                    FROM tickets_asignados ta
-                    INNER JOIN formulario_ticket ft ON ta.tic_numero_ticket = ft.form_tick_num
+                    FROM formulario_ticket ft
                     INNER JOIN mper mp_solicitante ON ft.form_tic_usu = mp_solicitante.per_catalogo
-                    INNER JOIN mper mp_encargado ON ta.tic_encargado = mp_encargado.per_catalogo
-                    INNER JOIN estado_ticket et ON ta.estado_ticket = et.est_tic_id
                     INNER JOIN mdep md ON ft.tic_dependencia = md.dep_llave
                     WHERE $where 
                     ORDER BY ft.form_fecha_creacion DESC";
-            $data = self::fetchArray($sql);
+                    
+            $tickets = self::fetchArray($sql);
+            
+            // Procesar cada ticket para agregar información de estado y encargado
+            $data = [];
+            foreach ($tickets as $ticket) {
+                // Verificar si el ticket está asignado
+                $sql_asignado = "SELECT ta.tic_id, ta.tic_encargado, ta.estado_ticket,
+                                        mp_encargado.per_nom1 || ' ' || mp_encargado.per_nom2 || ' ' || mp_encargado.per_ape1 AS encargado_nombre,
+                                        et.est_tic_desc AS estado_descripcion
+                                 FROM tickets_asignados ta
+                                 INNER JOIN mper mp_encargado ON ta.tic_encargado = mp_encargado.per_catalogo
+                                 INNER JOIN estado_ticket et ON ta.estado_ticket = et.est_tic_id
+                                 WHERE ta.tic_numero_ticket = '{$ticket['form_tick_num']}'";
+                
+                $asignado = self::fetchFirst($sql_asignado);
+                
+                if ($asignado) {
+                    // Ticket asignado
+                    $ticket['tic_id'] = $asignado['tic_id'];
+                    $ticket['encargado_nombre'] = $asignado['encargado_nombre'];
+                    $ticket['estado_descripcion'] = $asignado['estado_descripcion'];
+                    $ticket['estado_ticket'] = $asignado['estado_ticket'];
+                } else {
+                    // Ticket no asignado (estado CREADO)
+                    $ticket['tic_id'] = $ticket['form_tick_num'];
+                    $ticket['encargado_nombre'] = 'SIN ASIGNAR';
+                    $ticket['estado_descripcion'] = 'CREADO';
+                    $ticket['estado_ticket'] = 1;
+                }
+                
+                // Aplicar filtro de estado si se especificó
+                if ($estado && $ticket['estado_ticket'] != $estado) {
+                    continue;
+                }
+                
+                $data[] = $ticket;
+            }
 
             http_response_code(200);
             echo json_encode([
@@ -150,67 +184,162 @@ class EstadoTicketController extends ActiveRecord
         }
     }
 
-    public static function modificarAPI()
+    public static function cambiarEstadoAPI()
     {
         getHeadersApi();
-
-        $id = $_POST['tic_id'];
-        $_POST['tic_encargado'] = filter_var($_POST['tic_encargado'], FILTER_SANITIZE_NUMBER_INT);
         
-        if (empty($_POST['tic_encargado']) || $_POST['tic_encargado'] < 1) {
-            http_response_code(400);
-            echo json_encode([
-                'codigo' => 0,
-                'mensaje' => 'Debe seleccionar un técnico encargado'
-            ]);
-            return;
-        }
-
-        $_POST['estado_ticket'] = filter_var($_POST['estado_ticket'], FILTER_SANITIZE_NUMBER_INT);
-        
-        if (empty($_POST['estado_ticket']) || $_POST['estado_ticket'] < 1) {
-            http_response_code(400);
-            echo json_encode([
-                'codigo' => 0,
-                'mensaje' => 'Debe seleccionar un estado'
-            ]);
-            return;
-        }
-
         try {
-            $data = TicketAsignado::find($id);
-            $data->sincronizar([
-                'tic_encargado' => $_POST['tic_encargado'],
-                'estado_ticket' => $_POST['estado_ticket']
-            ]);
-            $data->actualizar();
+            $ticket_numero = filter_var($_POST['ticket_numero'], FILTER_SANITIZE_STRING);
+            $estado_actual = filter_var($_POST['estado_actual'], FILTER_SANITIZE_NUMBER_INT);
+            
+            if (empty($ticket_numero)) {
+                http_response_code(400);
+                echo json_encode([
+                    'codigo' => 0,
+                    'mensaje' => 'Número de ticket inválido'
+                ]);
+                return;
+            }
 
-            http_response_code(200);
-            echo json_encode([
-                'codigo' => 1,
-                'mensaje' => 'El ticket ha sido modificado exitosamente'
-            ]);
+            if (empty($estado_actual) || $estado_actual < 1 || $estado_actual > 8) {
+                http_response_code(400);
+                echo json_encode([
+                    'codigo' => 0,
+                    'mensaje' => 'Estado actual inválido'
+                ]);
+                return;
+            }
+
+            // Determinar el siguiente estado
+            $siguiente_estado = self::obtenerSiguienteEstado($estado_actual);
+            
+            if (!$siguiente_estado) {
+                http_response_code(400);
+                echo json_encode([
+                    'codigo' => 0,
+                    'mensaje' => 'Este ticket ya está en el estado final'
+                ]);
+                return;
+            }
+
+            // Verificar si el ticket está asignado o es nuevo
+            $sql_check = "SELECT tic_id FROM tickets_asignados WHERE tic_numero_ticket = '{$ticket_numero}'";
+            $ticket_asignado = self::fetchFirst($sql_check);
+
+            if ($ticket_asignado) {
+                // Actualizar ticket existente en tickets_asignados
+                $sql_update = "UPDATE tickets_asignados SET estado_ticket = {$siguiente_estado} WHERE tic_numero_ticket = '{$ticket_numero}'";
+                $resultado = self::SQL($sql_update);
+            } else {
+                // Crear nuevo registro en tickets_asignados para tickets que están en CREADO
+                if ($estado_actual == 1) { // CREADO
+                    // Obtener datos del ticket del formulario
+                    $sql_ticket = "SELECT form_tic_usu FROM formulario_ticket WHERE form_tick_num = '{$ticket_numero}'";
+                    $ticket_data = self::fetchFirst($sql_ticket);
+                    
+                    if ($ticket_data) {
+                        $sql_insert = "INSERT INTO tickets_asignados (tic_numero_ticket, tic_encargado, estado_ticket) 
+                                      VALUES ('{$ticket_numero}', {$ticket_data['form_tic_usu']}, {$siguiente_estado})";
+                        $resultado = self::SQL($sql_insert);
+                    } else {
+                        http_response_code(400);
+                        echo json_encode([
+                            'codigo' => 0,
+                            'mensaje' => 'No se encontró el ticket'
+                        ]);
+                        return;
+                    }
+                } else {
+                    http_response_code(400);
+                    echo json_encode([
+                        'codigo' => 0,
+                        'mensaje' => 'Error en el estado del ticket'
+                    ]);
+                    return;
+                }
+            }
+
+            if ($resultado) {
+                // Obtener nombre del nuevo estado
+                $sql_estado = "SELECT est_tic_desc FROM estado_ticket WHERE est_tic_id = {$siguiente_estado}";
+                $nuevo_estado = self::fetchFirst($sql_estado);
+                
+                http_response_code(200);
+                echo json_encode([
+                    'codigo' => 1,
+                    'mensaje' => 'Estado del ticket actualizado a: ' . ($nuevo_estado['est_tic_desc'] ?? 'Nuevo Estado')
+                ]);
+            } else {
+                http_response_code(400);
+                echo json_encode([
+                    'codigo' => 0,
+                    'mensaje' => 'No se pudo actualizar el estado del ticket'
+                ]);
+            }
         } catch (Exception $e) {
             http_response_code(400);
             echo json_encode([
                 'codigo' => 0,
-                'mensaje' => 'Error al guardar',
+                'mensaje' => 'Error al cambiar el estado',
                 'detalle' => $e->getMessage(),
             ]);
         }
     }
 
+    private static function obtenerSiguienteEstado($estado_actual)
+    {
+        // Mapeo de estados: actual => siguiente
+        $estados_flujo = [
+            1 => 2, // CREADO → RECIBIDO
+            2 => 3, // RECIBIDO → PENDIENTE ASIGNACION
+            3 => 4, // PENDIENTE ASIGNACION → ASIGNADO
+            4 => 5, // ASIGNADO → EN PROCESO
+            5 => 6, // EN PROCESO → EN ESPERA REQUERIMIENTOS
+            6 => 7, // EN ESPERA REQUERIMIENTOS → RESUELTO
+            7 => 8, // RESUELTO → CERRADO
+            8 => null // CERRADO (estado final)
+        ];
+
+        return $estados_flujo[$estado_actual] ?? null;
+    }
+
+
+
     public static function EliminarAPI()
     {
         try {
-            $id = filter_var($_GET['id'], FILTER_SANITIZE_NUMBER_INT);
-            $ejecutar = TicketAsignado::EliminarTicketAsignado($id);
+            $ticket_numero = filter_var($_GET['ticket_numero'], FILTER_SANITIZE_STRING);
+            
+            if (empty($ticket_numero)) {
+                http_response_code(400);
+                echo json_encode([
+                    'codigo' => 0,
+                    'mensaje' => 'Número de ticket inválido'
+                ]);
+                return;
+            }
 
-            http_response_code(200);
-            echo json_encode([
-                'codigo' => 1,
-                'mensaje' => 'El ticket ha sido eliminado correctamente'
-            ]);
+            // Eliminar de tickets_asignados si existe
+            $sql_delete_asignado = "DELETE FROM tickets_asignados WHERE tic_numero_ticket = '{$ticket_numero}'";
+            self::SQL($sql_delete_asignado);
+            
+            // Eliminar completamente de formulario_ticket
+            $sql_delete_formulario = "DELETE FROM formulario_ticket WHERE form_tick_num = '{$ticket_numero}'";
+            $resultado = self::SQL($sql_delete_formulario);
+
+            if ($resultado) {
+                http_response_code(200);
+                echo json_encode([
+                    'codigo' => 1,
+                    'mensaje' => 'El ticket ha sido eliminado correctamente'
+                ]);
+            } else {
+                http_response_code(400);
+                echo json_encode([
+                    'codigo' => 0,
+                    'mensaje' => 'No se pudo eliminar el ticket'
+                ]);
+            }
         } catch (Exception $e) {
             http_response_code(400);
             echo json_encode([
@@ -267,53 +396,6 @@ class EstadoTicketController extends ActiveRecord
             echo json_encode([
                 'codigo' => 0,
                 'mensaje' => 'Error al obtener los estados',
-                'detalle' => $e->getMessage(),
-            ]);
-        }
-    }
-
-    public static function cambiarEstadoAPI()
-    {
-        getHeadersApi();
-
-        try {
-            $id = filter_var($_POST['tic_id'], FILTER_SANITIZE_NUMBER_INT);
-            $nuevoEstado = filter_var($_POST['nuevo_estado'], FILTER_SANITIZE_NUMBER_INT);
-            
-            if (empty($id) || $id < 1) {
-                http_response_code(400);
-                echo json_encode([
-                    'codigo' => 0,
-                    'mensaje' => 'ID de ticket inválido'
-                ]);
-                return;
-            }
-
-            if (empty($nuevoEstado) || $nuevoEstado < 1) {
-                http_response_code(400);
-                echo json_encode([
-                    'codigo' => 0,
-                    'mensaje' => 'Estado inválido'
-                ]);
-                return;
-            }
-
-            $data = TicketAsignado::find($id);
-            $data->sincronizar([
-                'estado_ticket' => $nuevoEstado
-            ]);
-            $data->actualizar();
-
-            http_response_code(200);
-            echo json_encode([
-                'codigo' => 1,
-                'mensaje' => 'Estado del ticket actualizado correctamente'
-            ]);
-        } catch (Exception $e) {
-            http_response_code(400);
-            echo json_encode([
-                'codigo' => 0,
-                'mensaje' => 'Error al cambiar el estado',
                 'detalle' => $e->getMessage(),
             ]);
         }

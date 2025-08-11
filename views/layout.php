@@ -244,7 +244,7 @@ session_start();
 
             <li class="nav-item">
                 <a class="nav-link px-3" href="/app_ticket/mis-tickets">
-                    <i class="bi bi-person-check-fill me-2"></i>Mis Tickets
+                    <i class="bi bi-person-check-fill me-2"></i>Control de Tickets
                 </a>
             </li>
 

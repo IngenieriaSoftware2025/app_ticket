@@ -389,7 +389,7 @@ $userName = $_SESSION['user'] ?? 'Usuario';
                     </div>
                     <div class="card-body text-center">
                         <h5 class="card-title fw-bold">
-                            <i class="bi bi-person-check-fill me-2 text-success"></i>Mis Tickets
+                            <i class="bi bi-person-check-fill me-2 text-success"></i>Contro de Tickets
                         </h5>
                         <p class="card-text text-muted">Consulta el estado y historial de tus tickets enviados.</p>
                         <a href="/app_ticket/mis-tickets" class="btn btn-success">Ver Mis Tickets</a>

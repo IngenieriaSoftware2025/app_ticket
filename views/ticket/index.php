@@ -108,7 +108,7 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
                         
                         <div class="d-flex justify-content-center gap-3">
                             <button class="btn btn-success btn-lg px-4 shadow" type="submit" id="BtnEnviar">
-                                <i class="bi bi-send me-2"></i>Enviar Ticket
+                                <i class="bi bi-send me-2"></i>Crear Ticket
                             </button>
                             <button class="btn btn-secondary btn-lg px-4 shadow" type="button" id="BtnLimpiar">
                                 <i class="bi bi-eraser me-2"></i>Limpiar Formulario

@@ -13,7 +13,7 @@ class FormularioTicket extends ActiveRecord {
         'tic_comentario_falla',
         'tic_correo_electronico',
         'tic_imagen',
-        'form_fecha_creacion'
+        //'form_fecha_creacion'
     ];
 
     public $form_tick_num;
@@ -23,7 +23,7 @@ class FormularioTicket extends ActiveRecord {
     public $tic_comentario_falla;
     public $tic_correo_electronico;
     public $tic_imagen;
-    public $form_fecha_creacion;
+    //public $form_fecha_creacion;
 
     public function __construct($argumentos = []) {
         $this->form_tick_num = $argumentos['form_tick_num'] ?? '';
@@ -33,6 +33,6 @@ class FormularioTicket extends ActiveRecord {
         $this->tic_comentario_falla = $argumentos['tic_comentario_falla'] ?? '';
         $this->tic_correo_electronico = $argumentos['tic_correo_electronico'] ?? '';
         $this->tic_imagen = $argumentos['tic_imagen'] ?? '';
-        $this->form_fecha_creacion = $argumentos['form_fecha_creacion'] ?? '';
+        //$this->form_fecha_creacion = $argumentos['form_fecha_creacion'] ?? '';
     }
 }

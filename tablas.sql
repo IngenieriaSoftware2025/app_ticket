@@ -4,14 +4,15 @@ CREATE TABLE formulario_ticket (
     form_tick_num VARCHAR(250) PRIMARY KEY,
     form_tic_usu INT NOT NULL, --Catalogo de la persona que esta teniendo el problema
     tic_dependencia SMALLINT NOT NULL,--Dependencia
+    tic_telefono INT NOT NULL, --Telefono de la persona que esta teniendo el problema
     tic_app INT NOT NULL,
     tic_comentario_falla TEXT NOT NULL, --Comentario del error
-    tic_correo_electronico VARCHAR(250) NOT NULL,
     tic_imagen VARCHAR(250),
     form_fecha_creacion DATETIME YEAR TO SECOND DEFAULT CURRENT YEAR TO SECOND,
     FOREIGN KEY (form_tic_usu) REFERENCES mper(per_catalogo),
     FOREIGN KEY (tic_dependencia) REFERENCES mdep(dep_llave),
-    FOREIGN KEY (tic_app) REFERENCES menuautocom(menu_codigo)
+    FOREIGN KEY (tic_app) REFERENCES menuautocom(menu_codigo),
+    FOREIGN KEY (tic_telefono) REFERENCES mper(per_telefono)
 );
 
 
@@ -44,10 +45,14 @@ CREATE TABLE estado_ticket (
     est_tic_id SERIAL PRIMARY KEY, 
     est_tic_desc VARCHAR (50) NOT NULL --Descripción de cada uno de los estados del ticket  
 );
---1-Creado
---2-Pendiente de asignacion
---3-Asignado
---4-Resuelto 
---5-En espera de requerimientos nuevoos (Por si el personal encargado necesita mas informacion)
+--1-Recibido
+--2-En proceso
+--3-Resuelto
+--4-Rechazado
+--5-En espera de requerimientos nuevos (Por si el personal encargado necesita mas informacion)
+
+--TAbla mper_otros
+
+
 
 

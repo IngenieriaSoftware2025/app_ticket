@@ -1,8 +1,8 @@
 <?php
 // Obtener datos de la sesión
-$nombreUsuario = $_SESSION['usuario_nombre'] ?? 'Usuario';
-$rolUsuario = $_SESSION['usuario_rol'] ?? 'EMPLEADO';
-$catalogoUsuario = $_SESSION['per_catalogo'] ?? null;
+$nombreUsuario = $_SESSION['usuario_nombre'] ?? null;
+$rolUsuario = $_SESSION['usuario_rol'] ?? null;
+$catalogoUsuario = $_SESSION['auth_user'] ?? null;
 $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
 ?>
 
@@ -194,6 +194,12 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
         </div>
     </div>
 </div>
+
+<?php
+echo "<pre>";
+var_dump($_SESSION);
+echo "</pre>";
+?>
 
 <!-- Estilos CSS para el Modal -->
 <style>

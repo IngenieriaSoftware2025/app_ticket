@@ -5,15 +5,14 @@ CREATE TABLE formulario_ticket (
     form_tic_usu INT NOT NULL, --Catalogo de la persona que esta teniendo el problema
     tic_dependencia SMALLINT NOT NULL,--Dependencia
     tic_telefono INT NOT NULL, --Telefono de la persona que esta teniendo el problema
-    tic_app INT NOT NULL,
+    tic_app INT NOT NULL, --Aplicación donde se esta presentando el problema
     tic_comentario_falla TEXT NOT NULL, --Comentario del error
     tic_imagen VARCHAR(250),
     form_fecha_creacion DATETIME YEAR TO SECOND DEFAULT CURRENT YEAR TO SECOND,
     form_estado SMALLINT DEFAULT 1,
     FOREIGN KEY (form_tic_usu) REFERENCES mper(per_catalogo),
     FOREIGN KEY (tic_dependencia) REFERENCES mdep(dep_llave),
-    FOREIGN KEY (tic_app) REFERENCES menuautocom(menu_codigo),
-    FOREIGN KEY (tic_telefono) REFERENCES mper(per_telefono)
+    FOREIGN KEY (tic_app) REFERENCES menuautocom(menu_codigo)
 );
 
 
@@ -22,7 +21,7 @@ CREATE TABLE tickets_asignados (
     tic_numero_ticket VARCHAR(250) NOT NULL, --Ticket del formulario creado donde esta almacenado toda la información del error 
     tic_encargado INT NOT NULL, --Catalgo de la persona encargada
     estado_ticket INT NOT NULL, --Estado en el que se encuentra el ticket
-    tic_situacion SMALLINT DEFAULT 1,
+    tic_situacion SMALLINT DEFAULT 1, 
     FOREIGN KEY (tic_numero_ticket) REFERENCES formulario_ticket(form_tick_num),
     FOREIGN KEY (tic_encargado) REFERENCES mper(per_catalogo),
     FOREIGN KEY (estado_ticket) REFERENCES estado_ticket(est_tic_id)

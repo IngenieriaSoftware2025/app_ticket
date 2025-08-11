@@ -5,6 +5,7 @@ CREATE TABLE formulario_ticket (
     form_tic_usu INT NOT NULL, --Catalogo de la persona que esta teniendo el problema
     tic_dependencia SMALLINT NOT NULL,--Dependencia
     tic_telefono INT NOT NULL, --Telefono de la persona que esta teniendo el problema
+    tic_correo_electronico VARCHAR(100) NOT NULL, --Correo electronico de la persona que esta teniendo el problema
     tic_app INT NOT NULL, --Aplicación donde se esta presentando el problema
     tic_comentario_falla TEXT NOT NULL, --Comentario del error
     tic_imagen VARCHAR(250),

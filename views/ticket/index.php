@@ -1,9 +1,39 @@
 <?php
 // Obtener datos de la sesión
-$nombreUsuario = $_SESSION['usuario_nombre'] ?? null;
-$rolUsuario = $_SESSION['usuario_rol'] ?? null;
 $catalogoUsuario = $_SESSION['auth_user'] ?? null;
-$dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
+$dependenciaUsuario = $_SESSION['dep_llave'] ?? 999; // Dependencia de prueba por defecto
+
+// Obtener datos del usuario desde mper
+$nombreUsuario = 'No disponible';
+$rolUsuario = 'No disponible';
+$telefonoUsuario = 'No disponible';
+$nombreDependencia = 'DEPENDENCIA DE PRUEBA'; // Valor por defecto
+
+if ($catalogoUsuario) {
+    try {
+        $sqlUsuario = "SELECT per_telefono, per_nom1, per_nom2, per_ape1, per_desc_empleo 
+                      FROM mper 
+                      WHERE per_catalogo = $catalogoUsuario";
+        $datosUsuario = \Model\ActiveRecord::fetchFirst($sqlUsuario);
+        
+        if ($datosUsuario) {
+            $nombreUsuario = trim($datosUsuario['per_nom1'] . ' ' . $datosUsuario['per_nom2'] . ' ' . $datosUsuario['per_ape1']);
+            $rolUsuario = $datosUsuario['per_desc_empleo'] ?? 'No definido';
+            $telefonoUsuario = $datosUsuario['per_telefono'] ?? 'No registrado';
+        }
+        
+        // Intentar obtener el nombre real de la dependencia si existe
+        if ($dependenciaUsuario != 999) {
+            $sqlDependencia = "SELECT dep_desc_lg FROM mdep WHERE dep_llave = $dependenciaUsuario";
+            $datosDependencia = \Model\ActiveRecord::fetchFirst($sqlDependencia);
+            if ($datosDependencia) {
+                $nombreDependencia = $datosDependencia['dep_desc_lg'];
+            }
+        }
+    } catch (Exception $e) {
+        // Los valores por defecto ya están asignados
+    }
+}
 ?>
 
 <div class="container py-5">
@@ -25,15 +55,24 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
                             </div>
                             <div class="col-md-6">
                                 <strong><i class="bi bi-hash me-2"></i>Catálogo:</strong> <?= $catalogoUsuario ?? 'No definido' ?><br>
-                                <strong><i class="bi bi-building me-2"></i>Dependencia:</strong> <?= $dependenciaUsuario ?? 'No definida' ?>
+                                <strong><i class="bi bi-telephone-fill me-2"></i>Teléfono:</strong> <?= $telefonoUsuario ?>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <strong><i class="bi bi-building me-2"></i>Dependencia:</strong> <?= $nombreDependencia ?>
+                            </div>
+                            <div class="col-md-6">
+                                <strong><i class="bi bi-envelope-fill me-2"></i>Correo:</strong> <span class="text-muted">Se ingresa en el formulario</span>
                             </div>
                         </div>
                     </div>
 
-                    <form id="formTicket" method="POST" action="/<?= $_ENV['APP_NAME'] ?>/ticket/guardar" class="p-4 bg-white rounded-3 shadow-sm border" enctype="multipart/form-data">
+                    <form id="formTicket" method="POST" action="/<?= $_ENV['APP_NAME'] ?>/ticket/guardarAPI" class="p-4 bg-white rounded-3 shadow-sm border" enctype="multipart/form-data">
                         <!-- Campos ocultos con datos de sesión -->
                         <input type="hidden" name="form_tic_usu" value="<?= $catalogoUsuario ?>">
                         <input type="hidden" name="tic_dependencia" value="<?= $dependenciaUsuario ?>">
+                        <input type="hidden" name="form_estado" value="1">
                         
                         <div class="row g-4 mb-3">
                             <div class="col-md-12">
@@ -47,13 +86,13 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
                                 <div class="form-text">Seleccione la aplicación que presenta el problema</div>
                             </div>
                         </div>
-                        
+
                         <div class="row g-4 mb-3">
                             <div class="col-md-12">
                                 <label for="tic_correo_electronico" class="form-label">
                                     <i class="bi bi-envelope me-2"></i>Correo Electrónico
                                 </label>
-                                <input type="email" class="form-control form-control-lg" id="tic_correo_electronico" name="tic_correo_electronico" placeholder="ejemplo@correo.com" maxlength="250" required>
+                                <input type="email" class="form-control form-control-lg" id="tic_correo_electronico" name="tic_correo_electronico" placeholder="ejemplo@correo.com" maxlength="100" required>
                                 <div class="invalid-feedback"></div>
                                 <div class="form-text">Correo donde recibirá las actualizaciones del ticket</div>
                             </div>
@@ -81,25 +120,28 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
                         <div class="row g-4 mb-3">
                             <div class="col-md-12">
                                 <label for="tic_imagen" class="form-label">
-                                    <i class="bi bi-image me-2"></i>Imagen del Problema (Opcional)
+                                    <i class="bi bi-image me-2"></i>Imágenes del Problema (Opcional)
                                 </label>
-                                <input type="file" class="form-control form-control-lg" id="tic_imagen" name="tic_imagen" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                                <input type="file" class="form-control form-control-lg" id="tic_imagen" name="tic_imagen[]" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" multiple>
                                 <div class="invalid-feedback"></div>
                                 <div class="form-text">
                                     <strong>Formatos permitidos:</strong> JPG, PNG, GIF, WEBP | 
-                                    <strong>Tamaño máximo:</strong> 8MB
+                                    <strong>Tamaño máximo:</strong> 8MB por imagen |
+                                    <strong>Máximo:</strong> 5 imágenes
                                 </div>
                                 
-                                <!-- Vista previa de imagen -->
+                                <!-- Vista previa de imágenes -->
                                 <div id="contenedorVistaPrevia" class="mt-3 d-none">
                                     <div class="card border-success">
                                         <div class="card-header bg-success bg-opacity-10 py-2">
                                             <h6 class="mb-0 text-success">
-                                                <i class="bi bi-check-circle me-2"></i>Vista Previa de la Imagen
+                                                <i class="bi bi-check-circle me-2"></i>Vista Previa de las Imágenes
                                             </h6>
                                         </div>
-                                        <div class="card-body text-center">
-                                            <img id="vistaPrevia" class="img-fluid rounded" style="max-height: 200px;" alt="Vista previa">
+                                        <div class="card-body">
+                                            <div id="imagenesPreview" class="row g-2">
+                                                <!-- Las imágenes se mostrarán aquí -->
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -127,7 +169,7 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
         <div class="modal-ticket-card">
             <!-- Header del Modal -->
             <div class="modal-ticket-header">
-                <h4 class="modal-ticket-title" id="ticketModalTitle">Detalles de Ticket</h4>
+                <h4 class="modal-ticket-title" id="ticketModalTitle">Ticket Creado Exitosamente</h4>
             </div>
 
             <!-- Contenido del Modal -->
@@ -159,10 +201,13 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
                                 <strong>Nombre:</strong> <span id="ticketUsuario"><?= $nombreUsuario ?></span>
                             </div>
                             <div class="info-item">
-                                <strong>Email:</strong> <span id="ticketEmail"></span>
+                                <strong>Teléfono:</strong> <span id="ticketTelefono"><?= $telefonoUsuario ?></span>
                             </div>
                             <div class="info-item">
-                                <strong>Dependencia:</strong> <span id="ticketDependencia"><?= $dependenciaUsuario ?? 'No definida' ?></span>
+                                <strong>Correo:</strong> <span id="ticketCorreo"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Dependencia:</strong> <span id="ticketDependencia"><?= $nombreDependencia ?></span>
                             </div>
                         </div>
                     </div>
@@ -176,9 +221,9 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
                     </div>
                 </div>
 
-                <!-- Imagen Adjunta (si existe) -->
+                <!-- Imágenes Adjuntas (si existen) -->
                 <div id="imagenSection" class="imagen-section" style="display: none;">
-                    <h6 class="info-section-title">Imagen Adjunta</h6>
+                    <h6 class="info-section-title">Imágenes Adjuntas</h6>
                     <div class="imagen-container">
                         <img id="ticketImagen" class="ticket-imagen" alt="Imagen del problema">
                     </div>
@@ -194,12 +239,6 @@ $dependenciaUsuario = $_SESSION['dep_llave'] ?? null;
         </div>
     </div>
 </div>
-
-<?php
-echo "<pre>";
-var_dump($_SESSION);
-echo "</pre>";
-?>
 
 <!-- Estilos CSS para el Modal -->
 <style>
@@ -399,5 +438,30 @@ echo "</pre>";
     }
 }
 </style>
+
+<script>
+// Configurar contador de caracteres para textarea
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('tic_comentario_falla');
+    const contador = document.getElementById('contadorCaracteres');
+    
+    if (textarea && contador) {
+        const actualizarContador = () => {
+            const longitud = textarea.value.length;
+            contador.textContent = longitud;
+            
+            if (longitud < 15) {
+                contador.parentElement.className = 'text-danger';
+            } else {
+                contador.parentElement.className = 'text-muted';
+            }
+        };
+        
+        textarea.addEventListener('input', actualizarContador);
+        textarea.addEventListener('keyup', actualizarContador);
+        actualizarContador();
+    }
+});
+</script>
 
 <script src="<?= asset('build/js/ticket/index.js') ?>"></script>

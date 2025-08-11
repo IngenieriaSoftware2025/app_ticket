@@ -12,7 +12,8 @@ class HistorialTicket extends ActiveRecord {
         'hist_ticket',
         'hist_dependencia',
         'hist_tic_fecha_inicio',
-        'hist_tic_fecha_finalizacion'
+        'hist_tic_fecha_finalizacion',
+        'hist_tic_situacion'
     ];
 
     public $hist_tic_id;
@@ -22,6 +23,7 @@ class HistorialTicket extends ActiveRecord {
     public $hist_dependencia;
     public $hist_tic_fecha_inicio;
     public $hist_tic_fecha_finalizacion;
+    public $hist_tic_situacion;
 
     public function __construct($argumentos = []) {
         $this->hist_tic_id = $argumentos['hist_tic_id'] ?? null;
@@ -31,5 +33,6 @@ class HistorialTicket extends ActiveRecord {
         $this->hist_dependencia = $argumentos['hist_dependencia'] ?? 0;
         $this->hist_tic_fecha_inicio = $argumentos['hist_tic_fecha_inicio'] ?? '';
         $this->hist_tic_fecha_finalizacion = $argumentos['hist_tic_fecha_finalizacion'] ?? '';
+        $this->hist_tic_situacion = $argumentos['hist_tic_situacion'] ?? 1;
     }
 }

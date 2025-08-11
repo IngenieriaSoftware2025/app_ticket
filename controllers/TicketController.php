@@ -40,6 +40,33 @@ class TicketController extends ActiveRecord
                 exit;
             }
 
+            // Obtener datos del usuario desde mper automáticamente
+            $sqlUsuario = "SELECT per_telefono, per_nom1, per_nom2, per_ape1, per_desc_empleo 
+                          FROM mper 
+                          WHERE per_catalogo = {$_POST['form_tic_usu']}";
+            $datosUsuario = self::fetchFirst($sqlUsuario);
+
+            if (!$datosUsuario) {
+                http_response_code(400);
+                echo json_encode([
+                    'codigo' => 0,
+                    'mensaje' => 'No se encontraron datos del usuario en el sistema'
+                ]);
+                exit;
+            }
+
+            // Asignar teléfono automáticamente
+            $_POST['tic_telefono'] = $datosUsuario['per_telefono'];
+            
+            if (empty($_POST['tic_telefono'])) {
+                http_response_code(400);
+                echo json_encode([
+                    'codigo' => 0,
+                    'mensaje' => 'El usuario no tiene teléfono registrado en el sistema'
+                ]);
+                exit;
+            }
+
             // Validar aplicación
             $_POST['tic_app'] = filter_var($_POST['tic_app'], FILTER_SANITIZE_NUMBER_INT);
             
@@ -52,7 +79,7 @@ class TicketController extends ActiveRecord
                 exit;
             }
 
-            // Validar correo electrónico
+            // Validar correo electrónico (ingresado manualmente)
             $_POST['tic_correo_electronico'] = filter_var($_POST['tic_correo_electronico'], FILTER_SANITIZE_EMAIL);
             
             if (!filter_var($_POST['tic_correo_electronico'], FILTER_VALIDATE_EMAIL)){
@@ -64,11 +91,11 @@ class TicketController extends ActiveRecord
                 exit;
             }
 
-            if (strlen($_POST['tic_correo_electronico']) > 250) {
+            if (strlen($_POST['tic_correo_electronico']) > 100) {
                 http_response_code(400);
                 echo json_encode([
                     'codigo' => 0,
-                    'mensaje' => 'El correo electrónico no puede exceder 250 caracteres'
+                    'mensaje' => 'El correo electrónico no puede exceder 100 caracteres'
                 ]);
                 exit;
             }
@@ -98,76 +125,117 @@ class TicketController extends ActiveRecord
             // Generar número de ticket único
             $_POST['form_tick_num'] = 'TK' . date('Ymd') . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
             $_POST['form_fecha_creacion'] = '';
+            $_POST['form_estado'] = 1; // Campo estado por defecto: 1 = Activo
 
-            // Validar y procesar imagen si existe
-            $rutaImagen = '';
-            if (isset($_FILES['tic_imagen']) && $_FILES['tic_imagen']['error'] === UPLOAD_ERR_OK) {
-                $archivo = $_FILES['tic_imagen'];
-                $nombreArchivo = $archivo['name'];
-                $archivoTemporal = $archivo['tmp_name'];
-                $tamañoArchivo = $archivo['size'];
-
-                // Validar extensión
-                $extensionArchivo = strtolower(pathinfo($nombreArchivo, PATHINFO_EXTENSION));
-                $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-
-                if (!in_array($extensionArchivo, $extensionesPermitidas)) {
+            // Validar y procesar imágenes si existen
+            $rutasImagenes = [];
+            if (isset($_FILES['tic_imagen']) && !empty($_FILES['tic_imagen']['name'][0])) {
+                $totalArchivos = count($_FILES['tic_imagen']['name']);
+                
+                // Validar máximo de imágenes (ej: 5 imágenes máximo)
+                if ($totalArchivos > 5) {
                     http_response_code(400);
                     echo json_encode([
                         'codigo' => 0,
-                        'mensaje' => 'Solo se permiten archivos de imagen: JPG, PNG, GIF, WEBP'
+                        'mensaje' => 'No se pueden subir más de 5 imágenes'
                     ]);
                     exit;
                 }
 
-                // Validar tamaño (8MB máximo)
-                if ($tamañoArchivo > 8 * 1024 * 1024) {
-                    http_response_code(400);
-                    echo json_encode([
-                        'codigo' => 0,
-                        'mensaje' => 'La imagen no puede ser mayor a 8MB'
-                    ]);
-                    exit;
-                }
+                for ($i = 0; $i < $totalArchivos; $i++) {
+                    if ($_FILES['tic_imagen']['error'][$i] === UPLOAD_ERR_OK) {
+                        $nombreArchivo = $_FILES['tic_imagen']['name'][$i];
+                        $archivoTemporal = $_FILES['tic_imagen']['tmp_name'][$i];
+                        $tamañoArchivo = $_FILES['tic_imagen']['size'][$i];
 
-                // Validar que sea realmente una imagen
-                $infoImagen = getimagesize($archivoTemporal);
-                if ($infoImagen === false) {
-                    http_response_code(400);
-                    echo json_encode([
-                        'codigo' => 0,
-                        'mensaje' => 'El archivo no es una imagen válida'
-                    ]);
-                    exit;
-                }
+                        // Validar extensión
+                        $extensionArchivo = strtolower(pathinfo($nombreArchivo, PATHINFO_EXTENSION));
+                        $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
-                // Generar nombre único para el archivo
-                $nombreUnico = $_POST['form_tick_num'] . '_' . time() . '.' . $extensionArchivo;
-                $rutaDestino = "storage/imagenesTickets/$nombreUnico";
-                $rutaCompleta = __DIR__ . "/../../" . $rutaDestino;
+                        if (!in_array($extensionArchivo, $extensionesPermitidas)) {
+                            // Limpiar archivos ya subidos
+                            foreach ($rutasImagenes as $rutaEliminar) {
+                                if (file_exists(__DIR__ . "/../../" . $rutaEliminar)) {
+                                    unlink(__DIR__ . "/../../" . $rutaEliminar);
+                                }
+                            }
+                            http_response_code(400);
+                            echo json_encode([
+                                'codigo' => 0,
+                                'mensaje' => "Solo se permiten archivos de imagen: JPG, PNG, GIF, WEBP (archivo: $nombreArchivo)"
+                            ]);
+                            exit;
+                        }
 
-                // Crear directorio si no existe
-                $directorio = dirname($rutaCompleta);
-                if (!is_dir($directorio)) {
-                    mkdir($directorio, 0755, true);
-                }
+                        // Validar tamaño (8MB máximo por imagen)
+                        if ($tamañoArchivo > 8 * 1024 * 1024) {
+                            // Limpiar archivos ya subidos
+                            foreach ($rutasImagenes as $rutaEliminar) {
+                                if (file_exists(__DIR__ . "/../../" . $rutaEliminar)) {
+                                    unlink(__DIR__ . "/../../" . $rutaEliminar);
+                                }
+                            }
+                            http_response_code(400);
+                            echo json_encode([
+                                'codigo' => 0,
+                                'mensaje' => "La imagen no puede ser mayor a 8MB (archivo: $nombreArchivo)"
+                            ]);
+                            exit;
+                        }
 
-                // Mover archivo
-                if (move_uploaded_file($archivoTemporal, $rutaCompleta)) {
-                    $rutaImagen = $rutaDestino;
-                } else {
-                    http_response_code(500);
-                    echo json_encode([
-                        'codigo' => 0,
-                        'mensaje' => 'Error al subir la imagen'
-                    ]);
-                    exit;
+                        // Validar que sea realmente una imagen
+                        $infoImagen = getimagesize($archivoTemporal);
+                        if ($infoImagen === false) {
+                            // Limpiar archivos ya subidos
+                            foreach ($rutasImagenes as $rutaEliminar) {
+                                if (file_exists(__DIR__ . "/../../" . $rutaEliminar)) {
+                                    unlink(__DIR__ . "/../../" . $rutaEliminar);
+                                }
+                            }
+                            http_response_code(400);
+                            echo json_encode([
+                                'codigo' => 0,
+                                'mensaje' => "El archivo no es una imagen válida (archivo: $nombreArchivo)"
+                            ]);
+                            exit;
+                        }
+
+                        // Generar nombre único para el archivo
+                        $nombreUnico = $_POST['form_tick_num'] . '_' . ($i + 1) . '_' . time() . '.' . $extensionArchivo;
+                        $rutaDestino = "storage/imagenesTickets/$nombreUnico";
+                        $rutaCompleta = __DIR__ . "/../../" . $rutaDestino;
+
+                        // Crear directorio si no existe
+                        $directorio = dirname($rutaCompleta);
+                        if (!is_dir($directorio)) {
+                            mkdir($directorio, 0755, true);
+                        }
+
+                        // Mover archivo
+                        if (move_uploaded_file($archivoTemporal, $rutaCompleta)) {
+                            $rutasImagenes[] = $rutaDestino;
+                        } else {
+                            // Limpiar archivos ya subidos
+                            foreach ($rutasImagenes as $rutaEliminar) {
+                                if (file_exists(__DIR__ . "/../../" . $rutaEliminar)) {
+                                    unlink(__DIR__ . "/../../" . $rutaEliminar);
+                                }
+                            }
+                            http_response_code(500);
+                            echo json_encode([
+                                'codigo' => 0,
+                                'mensaje' => 'Error al subir las imágenes'
+                            ]);
+                            exit;
+                        }
+                    }
                 }
             }
 
             $ticket = new FormularioTicket($_POST);
-            if ($rutaImagen) {
-                $ticket->tic_imagen = $rutaImagen;
+            if (!empty($rutasImagenes)) {
+                // Guardar las rutas como JSON o separadas por comas
+                $ticket->tic_imagen = json_encode($rutasImagenes);
             }
             $resultado = $ticket->crear();
 
@@ -178,14 +246,20 @@ class TicketController extends ActiveRecord
                     'mensaje' => 'Ticket creado correctamente',
                     'data' => [
                         'numero_ticket' => $_POST['form_tick_num'],
-                        'id' => $resultado['id']
+                        'id' => $resultado['id'],
+                        'nombre_usuario' => trim($datosUsuario['per_nom1'] . ' ' . $datosUsuario['per_nom2'] . ' ' . $datosUsuario['per_ape1']),
+                        'telefono_usuario' => $datosUsuario['per_telefono'],
+                        'correo_usuario' => $_POST['tic_correo_electronico'],
+                        'imagenes' => $rutasImagenes
                     ]
                 ]);
                 exit;
             } else {
-                // Si falla, eliminar imagen subida
-                if ($rutaImagen && file_exists(__DIR__ . "/../../" . $rutaImagen)) {
-                    unlink(__DIR__ . "/../../" . $rutaImagen);
+                // Si falla, eliminar imágenes subidas
+                foreach ($rutasImagenes as $rutaEliminar) {
+                    if (file_exists(__DIR__ . "/../../" . $rutaEliminar)) {
+                        unlink(__DIR__ . "/../../" . $rutaEliminar);
+                    }
                 }
                 
                 http_response_code(500);
@@ -197,9 +271,13 @@ class TicketController extends ActiveRecord
             }
             
         } catch (Exception $e) {
-            // Si falla, eliminar imagen subida
-            if (isset($rutaImagen) && $rutaImagen && file_exists(__DIR__ . "/../../" . $rutaImagen)) {
-                unlink(__DIR__ . "/../../" . $rutaImagen);
+            // Si falla, eliminar imágenes subidas
+            if (isset($rutasImagenes) && !empty($rutasImagenes)) {
+                foreach ($rutasImagenes as $rutaEliminar) {
+                    if (file_exists(__DIR__ . "/../../" . $rutaEliminar)) {
+                        unlink(__DIR__ . "/../../" . $rutaEliminar);
+                    }
+                }
             }
 
             http_response_code(500);
@@ -214,6 +292,8 @@ class TicketController extends ActiveRecord
 
     public static function obtenerAplicacionesAPI() 
     {
+        getHeadersApi();
+        
         try {
             $sql = "SELECT menu_codigo, menu_descr 
                     FROM menuautocom 
@@ -233,34 +313,6 @@ class TicketController extends ActiveRecord
             echo json_encode([
                 'codigo' => 0,
                 'mensaje' => 'Error al obtener las aplicaciones',
-                'detalle' => $e->getMessage(),
-            ]);
-        }
-    }
-
-    public static function buscarTicketsDisponiblesAPI()
-    {
-        try {
-            $sql = "SELECT form_tick_num, tic_correo_electronico, form_fecha_creacion 
-                    FROM formulario_ticket 
-                    WHERE form_tick_num NOT IN (
-                        SELECT tic_numero_ticket FROM tickets_asignados
-                    )
-                    ORDER BY form_fecha_creacion DESC";
-            $data = self::fetchArray($sql);
-
-            http_response_code(200);
-            echo json_encode([
-                'codigo' => 1,
-                'mensaje' => 'Tickets disponibles obtenidos correctamente',
-                'data' => $data
-            ]);
-
-        } catch (Exception $e) {
-            http_response_code(400);
-            echo json_encode([
-                'codigo' => 0,
-                'mensaje' => 'Error al obtener los tickets disponibles',
                 'detalle' => $e->getMessage(),
             ]);
         }

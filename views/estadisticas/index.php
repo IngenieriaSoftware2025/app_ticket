@@ -195,7 +195,7 @@
 
 </div>
 
-<script src="<?= asset('build/js/estadisticas/tickets.js') ?>"></script>
+<script src="<?= asset('build/js/estadisticas/index.js') ?>"></script>
 
 </body>
 </html>

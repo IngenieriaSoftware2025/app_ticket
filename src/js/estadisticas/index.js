@@ -385,7 +385,7 @@ const BuscarTicketsReabiertos = async () => {
 }
 
 // Ejecutar funciones al cargar la página (comentadas por ahora ya que no hay datos)
-// BuscarTicketsPorEstado();
+BuscarTicketsPorEstado();
 // BuscarTicketsPorPrioridad();
 // BuscarTicketsPorAplicacion();
 // BuscarEvolucionTickets();

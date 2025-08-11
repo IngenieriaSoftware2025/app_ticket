@@ -6,7 +6,7 @@ module.exports = {
     'js/app' : './src/js/app.js',
     'js/inicio' : './src/js/inicio.js',
     'js/ticket/index' : './src/js/ticket/index.js',
-    'js/estadisticas/index' : './src/js/estadisticas.js',
+    'js/estadisticas/index' : './src/js/estadisticas/index.js',
     'js/estadoTicket/index' : './src/js/estadoTicket/index.js',
     'js/historial/index' : './src/js/historial/index.js'
   },

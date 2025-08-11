@@ -42,7 +42,8 @@ $router->get('/historial/buscarFinalizadosAPI', [HistorialTicketsController::cla
 //estadisticas
 $router->get('/estadisticas', [EstadisticasController::class,'renderizarPagina']);
 
-
+// APIs de estadisticas
+$router->get('/estadisticas/buscarTicketsPorEstadoAPI', [EstadisticasController::class, 'buscarTicketsPorEstadoAPI']);
 
 
 $router->comprobarRutas();

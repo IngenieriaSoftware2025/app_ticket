@@ -19,9 +19,16 @@ class HistorialTicketsController extends ActiveRecord
         try {
             $fecha_inicio = isset($_GET['fecha_inicio']) ? $_GET['fecha_inicio'] : null;
             $fecha_fin = isset($_GET['fecha_fin']) ? $_GET['fecha_fin'] : null;
-            $tipo = isset($_GET['tipo']) ? $_GET['tipo'] : 'creados'; // 'creados' o 'finalizados'
+            $tipo = isset($_GET['tipo']) ? $_GET['tipo'] : 'recibidos'; // 'recibidos', 'finalizados' o 'rechazados'
 
             $condiciones = ["ft.form_tick_num IS NOT NULL"];
+            
+            // Filtrar según el estado del formulario
+            if ($tipo == 'rechazados') {
+                $condiciones[] = "ft.form_estado = 0"; // Solo rechazados
+            } else {
+                $condiciones[] = "ft.form_estado = 1"; // Solo activos
+            }
 
             if ($fecha_inicio) {
                 $condiciones[] = "ft.form_fecha_creacion >= '{$fecha_inicio}'";
@@ -53,47 +60,69 @@ class HistorialTicketsController extends ActiveRecord
             // Procesar cada ticket para agregar información de estado
             $data = [];
             foreach ($tickets as $ticket) {
-                // Verificar si el ticket está asignado
-                $sql_asignado = "SELECT ta.tic_id, ta.tic_encargado, ta.estado_ticket,
-                                        mp_encargado.per_nom1 || ' ' || mp_encargado.per_nom2 || ' ' || mp_encargado.per_ape1 AS encargado_nombre,
-                                        et.est_tic_desc AS estado_descripcion
-                                 FROM tickets_asignados ta
-                                 INNER JOIN mper mp_encargado ON ta.tic_encargado = mp_encargado.per_catalogo
-                                 INNER JOIN estado_ticket et ON ta.estado_ticket = et.est_tic_id
-                                 WHERE ta.tic_numero_ticket = '{$ticket['form_tick_num']}'";
-                
-                $asignado = self::fetchFirst($sql_asignado);
-                
-                if ($asignado) {
-                    // Ticket asignado
-                    $ticket['tic_id'] = $asignado['tic_id'];
-                    $ticket['encargado_nombre'] = $asignado['encargado_nombre'];
-                    $ticket['estado_descripcion'] = $asignado['estado_descripcion'];
-                    $ticket['estado_ticket'] = $asignado['estado_ticket'];
-                } else {
-                    // Ticket no asignado (estado CREADO)
+                if ($tipo == 'rechazados') {
+                    // Para rechazados, solo agregar información básica
                     $ticket['tic_id'] = $ticket['form_tick_num'];
                     $ticket['encargado_nombre'] = 'SIN ASIGNAR';
-                    $ticket['estado_descripcion'] = 'CREADO';
-                    $ticket['estado_ticket'] = 1;
-                }
-                
-                // Filtrar según el tipo solicitado
-                if ($tipo == 'creados') {
-                    // CREADOS: estados 1-6 (CREADO hasta EN ESPERA REQUERIMIENTOS)
-                    if ($ticket['estado_ticket'] >= 1 && $ticket['estado_ticket'] <= 6) {
-                        $data[] = $ticket;
+                    $ticket['estado_descripcion'] = 'RECHAZADO';
+                    $ticket['estado_ticket'] = 0;
+                    $data[] = $ticket;
+                } else {
+                    // Para recibidos y finalizados, verificar si el ticket está asignado
+                    $sql_asignado = "SELECT ta.tic_id, ta.tic_encargado, ta.estado_ticket,
+                                            mp_encargado.per_nom1 || ' ' || mp_encargado.per_nom2 || ' ' || mp_encargado.per_ape1 AS encargado_nombre,
+                                            et.est_tic_desc AS estado_descripcion
+                                     FROM tickets_asignados ta
+                                     INNER JOIN mper mp_encargado ON ta.tic_encargado = mp_encargado.per_catalogo
+                                     INNER JOIN estado_ticket et ON ta.estado_ticket = et.est_tic_id
+                                     WHERE ta.tic_numero_ticket = '{$ticket['form_tick_num']}'";
+                    
+                    $asignado = self::fetchFirst($sql_asignado);
+                    
+                    if ($asignado) {
+                        // Ticket asignado
+                        $ticket['tic_id'] = $asignado['tic_id'];
+                        $ticket['encargado_nombre'] = $asignado['encargado_nombre'];
+                        $ticket['estado_descripcion'] = $asignado['estado_descripcion'];
+                        $ticket['estado_ticket'] = $asignado['estado_ticket'];
+                    } else {
+                        // Ticket no asignado (estado RECIBIDO)
+                        $ticket['tic_id'] = $ticket['form_tick_num'];
+                        $ticket['encargado_nombre'] = 'SIN ASIGNAR';
+                        $ticket['estado_descripcion'] = 'RECIBIDO';
+                        $ticket['estado_ticket'] = 1;
                     }
-                } elseif ($tipo == 'finalizados') {
-                    // FINALIZADOS: estados 7-8 (RESUELTO y CERRADO)
-                    if ($ticket['estado_ticket'] >= 7 && $ticket['estado_ticket'] <= 8) {
-                        $data[] = $ticket;
+                    
+                    // Filtrar según el tipo solicitado
+                    if ($tipo == 'recibidos') {
+                        // RECIBIDOS: estados 1-2 (RECIBIDO y EN PROCESO)
+                        if ($ticket['estado_ticket'] >= 1 && $ticket['estado_ticket'] <= 2) {
+                            $data[] = $ticket;
+                        }
+                    } elseif ($tipo == 'finalizados') {
+                        // FINALIZADOS: estado 3 (FINALIZADO)
+                        if ($ticket['estado_ticket'] == 3) {
+                            $data[] = $ticket;
+                        }
                     }
                 }
             }
 
             // Determinar el mensaje según el tipo
-            $mensaje_tipo = ($tipo == 'creados') ? 'Tickets creados' : 'Tickets finalizados';
+            $mensaje_tipo = '';
+            switch($tipo) {
+                case 'recibidos':
+                    $mensaje_tipo = 'Tickets recibidos';
+                    break;
+                case 'finalizados':
+                    $mensaje_tipo = 'Tickets finalizados';
+                    break;
+                case 'rechazados':
+                    $mensaje_tipo = 'Tickets rechazados';
+                    break;
+                default:
+                    $mensaje_tipo = 'Tickets';
+            }
 
             http_response_code(200);
             echo json_encode([
@@ -119,7 +148,8 @@ class HistorialTicketsController extends ActiveRecord
             $fecha_inicio = isset($_GET['fecha_inicio']) ? $_GET['fecha_inicio'] : null;
             $fecha_fin = isset($_GET['fecha_fin']) ? $_GET['fecha_fin'] : null;
 
-            $condiciones = ["ft.form_tick_num IS NOT NULL"];
+            // Solo mostrar tickets que no estén rechazados (form_estado = 1)
+            $condiciones = ["ft.form_tick_num IS NOT NULL", "ft.form_estado = 1"];
 
             if ($fecha_inicio) {
                 $condiciones[] = "ft.form_fecha_creacion >= '{$fecha_inicio}'";
@@ -167,12 +197,12 @@ class HistorialTicketsController extends ActiveRecord
                 } else {
                     $ticket['tic_id'] = $ticket['form_tick_num'];
                     $ticket['encargado_nombre'] = 'SIN ASIGNAR';
-                    $ticket['estado_descripcion'] = 'CREADO';
+                    $ticket['estado_descripcion'] = 'RECIBIDO';
                     $ticket['estado_ticket'] = 1;
                 }
                 
-                // Solo tickets creados (estados 1-6)
-                if ($ticket['estado_ticket'] >= 1 && $ticket['estado_ticket'] <= 6) {
+                // Solo tickets recibidos (estados 1-2: RECIBIDO y EN PROCESO)
+                if ($ticket['estado_ticket'] >= 1 && $ticket['estado_ticket'] <= 2) {
                     $data[] = $ticket;
                 }
             }
@@ -180,7 +210,7 @@ class HistorialTicketsController extends ActiveRecord
             http_response_code(200);
             echo json_encode([
                 'codigo' => 1,
-                'mensaje' => 'Tickets creados obtenidos correctamente',
+                'mensaje' => 'Tickets recibidos obtenidos correctamente',
                 'data' => $data
             ]);
 
@@ -188,7 +218,7 @@ class HistorialTicketsController extends ActiveRecord
             http_response_code(400);
             echo json_encode([
                 'codigo' => 0,
-                'mensaje' => 'Error al obtener tickets creados',
+                'mensaje' => 'Error al obtener tickets recibidos',
                 'detalle' => $e->getMessage(),
             ]);
         }
@@ -200,7 +230,8 @@ class HistorialTicketsController extends ActiveRecord
             $fecha_inicio = isset($_GET['fecha_inicio']) ? $_GET['fecha_inicio'] : null;
             $fecha_fin = isset($_GET['fecha_fin']) ? $_GET['fecha_fin'] : null;
 
-            $condiciones = ["ft.form_tick_num IS NOT NULL"];
+            // Solo mostrar tickets que no estén rechazados (form_estado = 1)
+            $condiciones = ["ft.form_tick_num IS NOT NULL", "ft.form_estado = 1"];
 
             if ($fecha_inicio) {
                 $condiciones[] = "ft.form_fecha_creacion >= '{$fecha_inicio}'";
@@ -240,8 +271,8 @@ class HistorialTicketsController extends ActiveRecord
                 
                 $asignado = self::fetchFirst($sql_asignado);
                 
-                if ($asignado && $asignado['estado_ticket'] >= 7 && $asignado['estado_ticket'] <= 8) {
-                    // Solo tickets finalizados (estados 7-8: RESUELTO y CERRADO)
+                if ($asignado && $asignado['estado_ticket'] == 3) {
+                    // Solo tickets finalizados (estado 3: FINALIZADO)
                     $ticket['tic_id'] = $asignado['tic_id'];
                     $ticket['encargado_nombre'] = $asignado['encargado_nombre'];
                     $ticket['estado_descripcion'] = $asignado['estado_descripcion'];

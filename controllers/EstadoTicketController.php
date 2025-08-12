@@ -54,16 +54,8 @@ class EstadoTicketController extends ActiveRecord
                 exit;
             }
 
-            $_POST['estado_ticket'] = filter_var($_POST['estado_ticket'], FILTER_SANITIZE_NUMBER_INT);
-            
-            if (empty($_POST['estado_ticket']) || $_POST['estado_ticket'] < 1) {
-                http_response_code(400);
-                echo json_encode([
-                    'codigo' => 0,
-                    'mensaje' => 'Debe seleccionar un estado'
-                ]);
-                exit;
-            }
+            // El estado siempre será 1 (RECIBIDO) para tickets nuevos
+            $_POST['estado_ticket'] = 1;
             
             $ticketAsignado = new TicketAsignado($_POST);
             $resultado = $ticketAsignado->crear();
@@ -102,7 +94,8 @@ class EstadoTicketController extends ActiveRecord
             $fecha_fin = isset($_GET['fecha_fin']) ? $_GET['fecha_fin'] : null;
             $estado = isset($_GET['estado']) ? $_GET['estado'] : null;
 
-            $condiciones = ["ft.form_tick_num IS NOT NULL"];
+            // Solo mostrar tickets que no estén rechazados (form_estado = 1)
+            $condiciones = ["ft.form_tick_num IS NOT NULL", "ft.form_estado = 1"];
 
             if ($fecha_inicio) {
                 $condiciones[] = "ft.form_fecha_creacion >= '{$fecha_inicio}'";
@@ -152,10 +145,10 @@ class EstadoTicketController extends ActiveRecord
                     $ticket['estado_descripcion'] = $asignado['estado_descripcion'];
                     $ticket['estado_ticket'] = $asignado['estado_ticket'];
                 } else {
-                    // Ticket no asignado (estado CREADO)
+                    // Ticket no asignado (estado RECIBIDO)
                     $ticket['tic_id'] = $ticket['form_tick_num'];
                     $ticket['encargado_nombre'] = 'SIN ASIGNAR';
-                    $ticket['estado_descripcion'] = 'CREADO';
+                    $ticket['estado_descripcion'] = 'RECIBIDO';
                     $ticket['estado_ticket'] = 1;
                 }
                 
@@ -201,7 +194,7 @@ class EstadoTicketController extends ActiveRecord
                 return;
             }
 
-            if (empty($estado_actual) || $estado_actual < 1 || $estado_actual > 8) {
+            if (empty($estado_actual) || $estado_actual < 1 || $estado_actual > 3) {
                 http_response_code(400);
                 echo json_encode([
                     'codigo' => 0,
@@ -217,7 +210,7 @@ class EstadoTicketController extends ActiveRecord
                 http_response_code(400);
                 echo json_encode([
                     'codigo' => 0,
-                    'mensaje' => 'Este ticket ya está en el estado final'
+                    'mensaje' => 'Este ticket ya está finalizado'
                 ]);
                 return;
             }
@@ -231,8 +224,8 @@ class EstadoTicketController extends ActiveRecord
                 $sql_update = "UPDATE tickets_asignados SET estado_ticket = {$siguiente_estado} WHERE tic_numero_ticket = '{$ticket_numero}'";
                 $resultado = self::SQL($sql_update);
             } else {
-                // Crear nuevo registro en tickets_asignados para tickets que están en CREADO
-                if ($estado_actual == 1) { // CREADO
+                // Crear nuevo registro en tickets_asignados para tickets que están en RECIBIDO
+                if ($estado_actual == 1) { // RECIBIDO
                     // Obtener datos del ticket del formulario
                     $sql_ticket = "SELECT form_tic_usu FROM formulario_ticket WHERE form_tick_num = '{$ticket_numero}'";
                     $ticket_data = self::fetchFirst($sql_ticket);
@@ -288,27 +281,22 @@ class EstadoTicketController extends ActiveRecord
 
     private static function obtenerSiguienteEstado($estado_actual)
     {
-        // Mapeo de estados: actual => siguiente
+        // Nuevo mapeo simplificado: RECIBIDO → EN PROCESO → FINALIZADO
         $estados_flujo = [
-            1 => 2, // CREADO → RECIBIDO
-            2 => 3, // RECIBIDO → PENDIENTE ASIGNACION
-            3 => 4, // PENDIENTE ASIGNACION → ASIGNADO
-            4 => 5, // ASIGNADO → EN PROCESO
-            5 => 6, // EN PROCESO → EN ESPERA REQUERIMIENTOS
-            6 => 7, // EN ESPERA REQUERIMIENTOS → RESUELTO
-            7 => 8, // RESUELTO → CERRADO
-            8 => null // CERRADO (estado final)
+            1 => 2, // RECIBIDO → EN PROCESO
+            2 => 3, // EN PROCESO → FINALIZADO
+            3 => null // FINALIZADO (estado final)
         ];
 
         return $estados_flujo[$estado_actual] ?? null;
     }
 
-
-
-    public static function EliminarAPI()
+    public static function RechazarAPI()
     {
+        getHeadersApi();
+        
         try {
-            $ticket_numero = filter_var($_GET['ticket_numero'], FILTER_SANITIZE_STRING);
+            $ticket_numero = filter_var($_POST['ticket_numero'], FILTER_SANITIZE_STRING);
             
             if (empty($ticket_numero)) {
                 http_response_code(400);
@@ -319,32 +307,45 @@ class EstadoTicketController extends ActiveRecord
                 return;
             }
 
-            // Eliminar de tickets_asignados si existe
-            $sql_delete_asignado = "DELETE FROM tickets_asignados WHERE tic_numero_ticket = '{$ticket_numero}'";
-            self::SQL($sql_delete_asignado);
+            // Verificar que el ticket esté en estado RECIBIDO (1)
+            $sql_check_estado = "SELECT ta.estado_ticket FROM tickets_asignados ta WHERE ta.tic_numero_ticket = '{$ticket_numero}'";
+            $ticket_estado = self::fetchFirst($sql_check_estado);
             
-            // Eliminar completamente de formulario_ticket
-            $sql_delete_formulario = "DELETE FROM formulario_ticket WHERE form_tick_num = '{$ticket_numero}'";
-            $resultado = self::SQL($sql_delete_formulario);
+            if ($ticket_estado && $ticket_estado['estado_ticket'] != 1) {
+                http_response_code(400);
+                echo json_encode([
+                    'codigo' => 0,
+                    'mensaje' => 'Solo se pueden rechazar tickets en estado RECIBIDO'
+                ]);
+                return;
+            }
+
+            // Cambiar form_estado a 0 (rechazado) en lugar de eliminar
+            $sql_rechazar = "UPDATE formulario_ticket SET form_estado = 0 WHERE form_tick_num = '{$ticket_numero}'";
+            $resultado = self::SQL($sql_rechazar);
 
             if ($resultado) {
+                // También eliminar de tickets_asignados si existe
+                $sql_delete_asignado = "DELETE FROM tickets_asignados WHERE tic_numero_ticket = '{$ticket_numero}'";
+                self::SQL($sql_delete_asignado);
+                
                 http_response_code(200);
                 echo json_encode([
                     'codigo' => 1,
-                    'mensaje' => 'El ticket ha sido eliminado correctamente'
+                    'mensaje' => 'El ticket ha sido rechazado correctamente'
                 ]);
             } else {
                 http_response_code(400);
                 echo json_encode([
                     'codigo' => 0,
-                    'mensaje' => 'No se pudo eliminar el ticket'
+                    'mensaje' => 'No se pudo rechazar el ticket'
                 ]);
             }
         } catch (Exception $e) {
             http_response_code(400);
             echo json_encode([
                 'codigo' => 0,
-                'mensaje' => 'Error al eliminar',
+                'mensaje' => 'Error al rechazar',
                 'detalle' => $e->getMessage(),
             ]);
         }

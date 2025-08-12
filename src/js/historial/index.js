@@ -2,12 +2,13 @@ import Swal from "sweetalert2";
 import DataTable from "datatables.net-bs5";
 import { lenguaje } from "../lenguaje";
 
-const btnCreados = document.getElementById('btnCreados');
+const btnRecibidos = document.getElementById('btnRecibidos');
 const btnFinalizados = document.getElementById('btnFinalizados');
+const btnRechazados = document.getElementById('btnRechazados');
 const indicadorVista = document.getElementById('indicadorVista');
 const textoIndicador = document.getElementById('textoIndicador');
 
-let vistaActual = 'creados'; // Por defecto mostrar creados
+let vistaActual = 'recibidos'; // Por defecto mostrar recibidos
 
 const BuscarTicketsHistorial = async () => {
     const fechaInicio = document.getElementById('filtroFechaInicio').value;
@@ -65,14 +66,16 @@ const BuscarTicketsHistorial = async () => {
     }
 }
 
-const BuscarTicketsCreados = async () => {
-    vistaActual = 'creados';
+const BuscarTicketsRecibidos = async () => {
+    vistaActual = 'recibidos';
     
     // Cambiar estado de botones
-    btnCreados.classList.remove('btn-outline-primary');
-    btnCreados.classList.add('btn-primary');
+    btnRecibidos.classList.remove('btn-outline-primary');
+    btnRecibidos.classList.add('btn-primary');
     btnFinalizados.classList.remove('btn-success');
     btnFinalizados.classList.add('btn-outline-success');
+    btnRechazados.classList.remove('btn-danger');
+    btnRechazados.classList.add('btn-outline-danger');
 
     await BuscarTicketsHistorial();
 }
@@ -83,21 +86,41 @@ const BuscarTicketsFinalizados = async () => {
     // Cambiar estado de botones
     btnFinalizados.classList.remove('btn-outline-success');
     btnFinalizados.classList.add('btn-success');
-    btnCreados.classList.remove('btn-primary');
-    btnCreados.classList.add('btn-outline-primary');
+    btnRecibidos.classList.remove('btn-primary');
+    btnRecibidos.classList.add('btn-outline-primary');
+    btnRechazados.classList.remove('btn-danger');
+    btnRechazados.classList.add('btn-outline-danger');
+
+    await BuscarTicketsHistorial();
+}
+
+const BuscarTicketsRechazados = async () => {
+    vistaActual = 'rechazados';
+    
+    // Cambiar estado de botones
+    btnRechazados.classList.remove('btn-outline-danger');
+    btnRechazados.classList.add('btn-danger');
+    btnRecibidos.classList.remove('btn-primary');
+    btnRecibidos.classList.add('btn-outline-primary');
+    btnFinalizados.classList.remove('btn-success');
+    btnFinalizados.classList.add('btn-outline-success');
 
     await BuscarTicketsHistorial();
 }
 
 const actualizarIndicador = () => {
-    if (vistaActual === 'creados') {
-        indicadorVista.classList.remove('alert-success');
+    if (vistaActual === 'recibidos') {
+        indicadorVista.classList.remove('alert-success', 'alert-danger');
         indicadorVista.classList.add('alert-info');
-        textoIndicador.innerHTML = '<i class="bi bi-plus-circle me-2"></i>Mostrando tickets creados (en proceso)';
-    } else {
-        indicadorVista.classList.remove('alert-info');
+        textoIndicador.innerHTML = '<i class="bi bi-plus-circle me-2"></i>Mostrando tickets recibidos (en proceso)';
+    } else if (vistaActual === 'finalizados') {
+        indicadorVista.classList.remove('alert-info', 'alert-danger');
         indicadorVista.classList.add('alert-success');
         textoIndicador.innerHTML = '<i class="bi bi-check-circle me-2"></i>Mostrando tickets finalizados (completados)';
+    } else if (vistaActual === 'rechazados') {
+        indicadorVista.classList.remove('alert-info', 'alert-success');
+        indicadorVista.classList.add('alert-danger');
+        textoIndicador.innerHTML = '<i class="bi bi-x-circle me-2"></i>Mostrando tickets rechazados';
     }
 }
 
@@ -129,24 +152,19 @@ const datatable = new DataTable('#TableHistorialTickets', {
         { 
             title: 'Número Ticket', 
             data: 'form_tick_num',
-            width: '15%'
+            width: '18%'
         },
         { 
             title: 'Solicitante', 
             data: 'solicitante_nombre',
-            width: '18%'
-        },
-        { 
-            title: 'Técnico Encargado', 
-            data: 'encargado_nombre',
-            width: '15%'
+            width: '22%'
         },
         { 
             title: 'Dependencia', 
             data: 'dependencia_nombre',
-            width: '18%',
+            width: '22%',
             render: (data, type, row, meta) => {
-                return data ? data.substring(0, 30) + '...' : '';
+                return data ? data.substring(0, 35) + '...' : '';
             }
         },
         {
@@ -156,27 +174,24 @@ const datatable = new DataTable('#TableHistorialTickets', {
             render: (data, type, row) => {
                 let badgeClass = 'bg-secondary';
                 switch(data) {
-                    case 'CREADO': badgeClass = 'bg-primary'; break;
                     case 'RECIBIDO': badgeClass = 'bg-info'; break;
-                    case 'PENDIENTE ASIGNACION': badgeClass = 'bg-warning'; break;
-                    case 'ASIGNADO': badgeClass = 'bg-success'; break;
                     case 'EN PROCESO': badgeClass = 'bg-primary'; break;
-                    case 'EN ESPERA REQUERIMIENTOS': badgeClass = 'bg-warning'; break;
-                    case 'RESUELTO': badgeClass = 'bg-success'; break;
-                    case 'CERRADO': badgeClass = 'bg-dark'; break;
+                    case 'FINALIZADO': badgeClass = 'bg-success'; break;
+                    case 'RECHAZADO': badgeClass = 'bg-danger'; break;
                 }
+                
                 return `<span class="badge ${badgeClass}">${data}</span>`;
             }
         },
         { 
             title: 'Fecha Creación', 
             data: 'form_fecha_creacion',
-            width: '12%'
+            width: '15%'
         },
         {
             title: 'Acciones',
             data: 'tic_id',
-            width: '7%',
+            width: '8%',
             searchable: false,
             orderable: false,
             render: (data, type, row, meta) => {
@@ -214,9 +229,15 @@ const mostrarDetalleTicket = (event) => {
     const imagenContainer = document.getElementById('detalleImagenContainer');
     const imagen = document.getElementById('detalleImagen');
     
-    if (ticket.tic_imagen && ticket.tic_imagen.trim() !== '') {
-        imagen.src = `/${ticket.tic_imagen}`;
-        imagenContainer.style.display = 'block';
+    // Manejar la imagen de forma segura
+    if (ticket.tic_imagen && ticket.tic_imagen.trim() !== '' && ticket.tic_imagen !== 'null') {
+        try {
+            imagen.src = `/${ticket.tic_imagen}`;
+            imagenContainer.style.display = 'block';
+        } catch (error) {
+            console.log('Error al cargar imagen:', error);
+            imagenContainer.style.display = 'none';
+        }
     } else {
         imagenContainer.style.display = 'none';
     }
@@ -227,12 +248,13 @@ document.getElementById('filtroFechaInicio').addEventListener('change', BuscarTi
 document.getElementById('filtroFechaFin').addEventListener('change', BuscarTicketsHistorial);
 
 // Eventos para botones de navegación
-btnCreados.addEventListener('click', BuscarTicketsCreados);
+btnRecibidos.addEventListener('click', BuscarTicketsRecibidos);
 btnFinalizados.addEventListener('click', BuscarTicketsFinalizados);
+btnRechazados.addEventListener('click', BuscarTicketsRechazados);
 
-// Cargar tickets creados automáticamente al inicio
+// Cargar tickets recibidos automáticamente al inicio
 document.addEventListener('DOMContentLoaded', function() {
-    vistaActual = 'creados';
+    vistaActual = 'recibidos';
     actualizarIndicador();
     BuscarTicketsHistorial();
 });

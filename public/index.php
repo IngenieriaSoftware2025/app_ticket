@@ -28,7 +28,7 @@ $router->get('/ticket/aplicaciones', [TicketController::class, 'obtenerAplicacio
 $router->get('/estado-tickets', [EstadoTicketController::class, 'renderizarPagina']);
 $router->post('/estado-tickets/guardarAPI', [EstadoTicketController::class, 'guardarAPI']);
 $router->get('/estado-tickets/buscarAPI', [EstadoTicketController::class, 'buscarAPI']);
-$router->get('/estado-tickets/eliminar', [EstadoTicketController::class, 'EliminarAPI']);
+$router->post('/estado-tickets/rechazar', [EstadoTicketController::class, 'RechazarAPI']); // Cambiado de eliminar a rechazar
 $router->get('/estado-tickets/buscarTecnicosAPI', [EstadoTicketController::class, 'buscarTecnicosAPI']);
 $router->get('/estado-tickets/buscarEstadosAPI', [EstadoTicketController::class, 'buscarEstadosAPI']);
 $router->post('/estado-tickets/cambiarEstadoAPI', [EstadoTicketController::class, 'cambiarEstadoAPI']);

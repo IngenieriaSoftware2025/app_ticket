@@ -5,25 +5,37 @@
                 <div class="card-body">
                     <div class="mb-4 text-center">
                         <h5 class="fw-bold text-secondary mb-2">¡Gestión de Tickets de Soporte!</h5>
-                        <h3 class="fw-bold text-primary mb-0">TICKETS REGISTRADOS EN EL SISTEMA</h3>
+                        <h3 class="fw-bold text-primary mb-0">CONTROL DE TICKETS</h3>
+                    </div>
+
+                    <!-- Botones de Estado -->
+                    <div class="text-center mb-4">
+                        <button class="btn btn-primary btn-lg mx-2 estado-btn active" data-estado="1" id="btnRecibidos">
+                            <i class="bi bi-plus-circle"></i> RECIBIDOS
+                        </button>
+                        <button class="btn btn-outline-primary btn-lg mx-2 estado-btn" data-estado="2" id="btnEnProceso">
+                            <i class="bi bi-gear"></i> EN PROCESO
+                        </button>
+                        <button class="btn btn-outline-success btn-lg mx-2 estado-btn" data-estado="3" id="btnFinalizados">
+                            <i class="bi bi-check-circle"></i> FINALIZADOS
+                        </button>
                     </div>
 
                     <!-- Filtros -->
                     <div class="row mb-4">
-                        <div class="col-md-4">
-                            <label for="filtroEstado" class="form-label">Filtrar por Estado</label>
-                            <select class="form-select" id="filtroEstado">
-                                <option value="">Todos los estados</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label for="filtroFechaInicio" class="form-label">Fecha Inicio</label>
                             <input type="date" class="form-control" id="filtroFechaInicio">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label for="filtroFechaFin" class="form-label">Fecha Fin</label>
                             <input type="date" class="form-control" id="filtroFechaFin">
                         </div>
+                    </div>
+
+                    <!-- Indicador del estado actual -->
+                    <div class="alert alert-info text-center" id="indicadorEstado">
+                        <i class="bi bi-info-circle"></i> <span id="textoIndicador">Mostrando tickets recibidos (en proceso)</span>
                     </div>
 
                     <div class="table-responsive">
@@ -33,7 +45,6 @@
                                     <th>No.</th>
                                     <th>Número Ticket</th>
                                     <th>Solicitante</th>
-                                    <th>Técnico Encargado</th>
                                     <th>Dependencia</th>
                                     <th>Estado</th>
                                     <th>Fecha Creación</th>

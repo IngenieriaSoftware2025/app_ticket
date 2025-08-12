@@ -12,11 +12,14 @@
                     <div class="row mb-4">
                         <div class="col-12 text-center">
                             <div class="btn-group" role="group" aria-label="Navegación de historial">
-                                <button type="button" class="btn btn-primary btn-lg px-4" id="btnCreados">
-                                    <i class="bi bi-plus-circle me-2"></i>CREADOS
+                                <button type="button" class="btn btn-primary btn-lg px-4" id="btnRecibidos">
+                                    <i class="bi bi-plus-circle me-2"></i>RECIBIDOS
                                 </button>
                                 <button type="button" class="btn btn-outline-success btn-lg px-4" id="btnFinalizados">
                                     <i class="bi bi-check-circle me-2"></i>FINALIZADOS
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-lg px-4" id="btnRechazados">
+                                    <i class="bi bi-x-circle me-2"></i>RECHAZADOS
                                 </button>
                             </div>
                         </div>
@@ -39,7 +42,7 @@
                         <div class="col-12">
                             <div class="alert alert-info text-center" id="indicadorVista">
                                 <i class="bi bi-info-circle me-2"></i>
-                                <span id="textoIndicador">Mostrando tickets creados</span>
+                                <span id="textoIndicador">Mostrando tickets recibidos</span>
                             </div>
                         </div>
                     </div>
@@ -51,7 +54,6 @@
                                     <th>No.</th>
                                     <th>Número Ticket</th>
                                     <th>Solicitante</th>
-                                    <th>Técnico Encargado</th>
                                     <th>Dependencia</th>
                                     <th>Estado</th>
                                     <th>Fecha Creación</th>

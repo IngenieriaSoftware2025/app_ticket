@@ -6,6 +6,7 @@ use Exception;
 use MVC\Router;
 use Model\ActiveRecord;
 use Model\FormularioTicket;
+use phpseclib3\Net\SFTP;
 
 class TicketController extends ActiveRecord
 {
@@ -129,10 +130,12 @@ class TicketController extends ActiveRecord
 
             // Validar y procesar imágenes si existen
             $rutasImagenes = [];
+            $nombresImagenesSubidas = [];
+            
             if (isset($_FILES['tic_imagen']) && !empty($_FILES['tic_imagen']['name'][0])) {
                 $totalArchivos = count($_FILES['tic_imagen']['name']);
                 
-                // Validar máximo de imágenes (ej: 5 imágenes máximo)
+                // Validar máximo de imágenes (Solo se pueden cargar 5 imagenes)
                 if ($totalArchivos > 5) {
                     http_response_code(400);
                     echo json_encode([
@@ -142,39 +145,98 @@ class TicketController extends ActiveRecord
                     exit;
                 }
 
+                // Configuración SFTP desde variables de entorno
+                $servidorSftp = $_ENV['FILE_SERVER'] ?? 'ftp-1';
+                $usuarioSftp = $_ENV['FILE_USER'] ?? 'ftpuser';
+                $passwordSftp = $_ENV['FILE_PASSWORD'] ?? 'ftppassword';
+                $directorioBase = '/home/ftpuser/upload/images_ticket/'; // Usando la ruta del .env
+
+                // Conectar al servidor SFTP
+                $conexionSftp = new SFTP('docker-ftp-1', 22);
+                if (!$conexionSftp->login('ftpuser', 'ftppassword')) {
+                    http_response_code(500);
+                    echo json_encode([
+                        'codigo' => 0,
+                        'mensaje' => 'Error de autenticación al servidor SFTP'
+                    ]);
+                    exit;
+                }
+
+                // Encontrar carpeta base disponible
+                $rutasPosibles = [
+                    '/home/ftpuser/upload/images_ticket/',
+                    '/home/ftpuser/upload/',
+                    '/upload/images_ticket/',
+                    '/upload/'
+                ];
+                
+                $carpetaBase = '/home/ftpuser/upload/'; // Por defecto
+                
+                foreach ($rutasPosibles as $ruta) {
+                    if ($conexionSftp->is_dir($ruta)) {
+                        $carpetaBase = $ruta;
+                        break;
+                    }
+                }
+                
+                // Crear estructura: carpeta_base/tickets/YYYY/nombre_del_ticket/
+                $año = date('Y');
+                $numeroTicket = $_POST['form_tick_num'];
+                
+                $carpetaTickets = $carpetaBase . "tickets/{$año}/{$numeroTicket}/";
+                
+                // Crear la estructura de carpetas si no existe
+                $carpetasACrear = [
+                    $carpetaBase . "tickets/",
+                    $carpetaBase . "tickets/{$año}/",
+                    $carpetaBase . "tickets/{$año}/{$numeroTicket}/"
+                ];
+                
+                foreach ($carpetasACrear as $carpeta) {
+                    if (!$conexionSftp->is_dir($carpeta)) {
+                        if (!$conexionSftp->mkdir($carpeta, 0755)) {
+                            error_log("No se pudo crear la carpeta: $carpeta");
+                        }
+                    }
+                }
+                
+                // Si no se pudo crear la estructura completa, usar la carpeta base
+                if (!$conexionSftp->is_dir($carpetaTickets)) {
+                    $carpetaTickets = $carpetaBase;
+                }
+
                 for ($i = 0; $i < $totalArchivos; $i++) {
                     if ($_FILES['tic_imagen']['error'][$i] === UPLOAD_ERR_OK) {
                         $nombreArchivo = $_FILES['tic_imagen']['name'][$i];
                         $archivoTemporal = $_FILES['tic_imagen']['tmp_name'][$i];
                         $tamañoArchivo = $_FILES['tic_imagen']['size'][$i];
 
-                        // Validar extensión
+                        // Validar extensión (Para cargar las imagenes)
                         $extensionArchivo = strtolower(pathinfo($nombreArchivo, PATHINFO_EXTENSION));
-                        $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                        $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff'];
 
                         if (!in_array($extensionArchivo, $extensionesPermitidas)) {
-                            // Limpiar archivos ya subidos
-                            foreach ($rutasImagenes as $rutaEliminar) {
-                                if (file_exists(__DIR__ . "/../../" . $rutaEliminar)) {
-                                    unlink(__DIR__ . "/../../" . $rutaEliminar);
-                                }
-                            }
+                            // Eliminar archivos ya subidos al SFTP
+                            self::eliminarArchivosSubidos($conexionSftp, $nombresImagenesSubidas);
+                            $conexionSftp->disconnect();
+                            
                             http_response_code(400);
                             echo json_encode([
                                 'codigo' => 0,
-                                'mensaje' => "Solo se permiten archivos de imagen: JPG, PNG, GIF, WEBP (archivo: $nombreArchivo)"
+                                'mensaje' => "Solo se permiten archivos de imagen: JPG, JPEG, PNG, GIF, WEBP, BMP, TIFF",
+                                'archivo_enviado' => $nombreArchivo,
+                                'extension_detectada' => $extensionArchivo,
+                                'debug_mime' => $_FILES['tic_imagen']['type'][$i] ?? 'no detectado'
                             ]);
                             exit;
                         }
 
                         // Validar tamaño (8MB máximo por imagen)
                         if ($tamañoArchivo > 8 * 1024 * 1024) {
-                            // Limpiar archivos ya subidos
-                            foreach ($rutasImagenes as $rutaEliminar) {
-                                if (file_exists(__DIR__ . "/../../" . $rutaEliminar)) {
-                                    unlink(__DIR__ . "/../../" . $rutaEliminar);
-                                }
-                            }
+                            // Eliminar archivos ya subidos al SFTP
+                            self::eliminarArchivosSubidos($conexionSftp, $nombresImagenesSubidas);
+                            $conexionSftp->disconnect();
+                            
                             http_response_code(400);
                             echo json_encode([
                                 'codigo' => 0,
@@ -184,59 +246,94 @@ class TicketController extends ActiveRecord
                         }
 
                         // Validar que sea realmente una imagen
-                        $infoImagen = getimagesize($archivoTemporal);
+                        $infoImagen = @getimagesize($archivoTemporal);
                         if ($infoImagen === false) {
-                            // Limpiar archivos ya subidos
-                            foreach ($rutasImagenes as $rutaEliminar) {
-                                if (file_exists(__DIR__ . "/../../" . $rutaEliminar)) {
-                                    unlink(__DIR__ . "/../../" . $rutaEliminar);
-                                }
+                            //Intentar obtener más info del archivo
+                            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                            $tipoMime = finfo_file($finfo, $archivoTemporal);
+                            finfo_close($finfo);
+                            
+                            // Solo rechazar si claramente NO es una imagen
+                            if (!str_contains($tipoMime, 'image/')) {
+                                self::eliminarArchivosSubidos($conexionSftp, $nombresImagenesSubidas);
+                                $conexionSftp->disconnect();
+                                
+                                http_response_code(400);
+                                echo json_encode([
+                                    'codigo' => 0,
+                                    'mensaje' => "El archivo no parece ser una imagen válida",
+                                    'archivo' => $nombreArchivo,
+                                    'tipo_mime_detectado' => $tipoMime,
+                                    'debug_getimagesize' => 'falló'
+                                ]);
+                                exit;
                             }
-                            http_response_code(400);
-                            echo json_encode([
-                                'codigo' => 0,
-                                'mensaje' => "El archivo no es una imagen válida (archivo: $nombreArchivo)"
-                            ]);
-                            exit;
+                        }
+
+                        // Validar tipo MIME
+                        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                        $tipoMime = finfo_file($finfo, $archivoTemporal);
+                        finfo_close($finfo);
+                        
+                        $tiposPermitidos = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff'];
+                        if (!in_array($tipoMime, $tiposPermitidos)) {
+                            // Solo advertir, no bloquear (más permisivo)
+                            error_log("Advertencia: tipo MIME no reconocido: $tipoMime para archivo: $nombreArchivo");
                         }
 
                         // Generar nombre único para el archivo
-                        $nombreUnico = $_POST['form_tick_num'] . '_' . ($i + 1) . '_' . time() . '.' . $extensionArchivo;
-                        $rutaDestino = "storage/imagenesTickets/$nombreUnico";
-                        $rutaCompleta = __DIR__ . "/../../" . $rutaDestino;
+                        $nombreUnico = $_POST['form_tick_num'] . '_img' . ($i + 1) . '_' . uniqid() . '.' . $extensionArchivo;
+                        $rutaCompletaSftp = $carpetaTickets . $nombreUnico;
 
-                        // Crear directorio si no existe
-                        $directorio = dirname($rutaCompleta);
-                        if (!is_dir($directorio)) {
-                            mkdir($directorio, 0755, true);
-                        }
-
-                        // Mover archivo
-                        if (move_uploaded_file($archivoTemporal, $rutaCompleta)) {
-                            $rutasImagenes[] = $rutaDestino;
+                        // Subir archivo al SFTP
+                        if ($conexionSftp->put($rutaCompletaSftp, $archivoTemporal, SFTP::SOURCE_LOCAL_FILE)) {
+                            $rutasImagenes[] = $rutaCompletaSftp;
+                            $nombresImagenesSubidas[] = $rutaCompletaSftp;
                         } else {
-                            // Limpiar archivos ya subidos
-                            foreach ($rutasImagenes as $rutaEliminar) {
-                                if (file_exists(__DIR__ . "/../../" . $rutaEliminar)) {
-                                    unlink(__DIR__ . "/../../" . $rutaEliminar);
-                                }
-                            }
+                            // Mostrar información del error
+                            $errorSftp = $conexionSftp->getLastSFTPError();
+                            
+                            // Eliminar archivos ya subidos al SFTP
+                            self::eliminarArchivosSubidos($conexionSftp, $nombresImagenesSubidas);
+                            $conexionSftp->disconnect();
+                            
                             http_response_code(500);
                             echo json_encode([
                                 'codigo' => 0,
-                                'mensaje' => 'Error al subir las imágenes'
+                                'mensaje' => "Error al subir la imagen al servidor SFTP (archivo: $nombreArchivo)",
+                                'debug_ruta' => $rutaCompletaSftp,
+                                'debug_carpeta' => $carpetaTickets,
+                                'debug_error_sftp' => $errorSftp
                             ]);
                             exit;
                         }
+                    } else {
+                        // Eliminar archivos ya subidos al SFTP si hay error
+                        if (isset($conexionSftp)) {
+                            self::eliminarArchivosSubidos($conexionSftp, $nombresImagenesSubidas);
+                            $conexionSftp->disconnect();
+                        }
+                        
+                        http_response_code(400);
+                        echo json_encode([
+                            'codigo' => 0,
+                            'mensaje' => 'Error al procesar una de las imágenes'
+                        ]);
+                        exit;
                     }
                 }
+
+                // Cerrar conexión SFTP
+                $conexionSftp->disconnect();
             }
 
+            // Crear el ticket en la base de datos
             $ticket = new FormularioTicket($_POST);
             if (!empty($rutasImagenes)) {
-                // Guardar las rutas como JSON o separadas por comas
+                // Guardar las rutas como JSON
                 $ticket->tic_imagen = json_encode($rutasImagenes);
             }
+            
             $resultado = $ticket->crear();
 
             if($resultado['resultado'] == 1){
@@ -250,33 +347,45 @@ class TicketController extends ActiveRecord
                         'nombre_usuario' => trim($datosUsuario['per_nom1'] . ' ' . $datosUsuario['per_nom2'] . ' ' . $datosUsuario['per_ape1']),
                         'telefono_usuario' => $datosUsuario['per_telefono'],
                         'correo_usuario' => $_POST['tic_correo_electronico'],
-                        'imagenes' => $rutasImagenes
+                        'imagenes_subidas' => count($rutasImagenes),
+                        'rutas_sftp' => $rutasImagenes
                     ]
                 ]);
                 exit;
             } else {
-                // Si falla, eliminar imágenes subidas
-                foreach ($rutasImagenes as $rutaEliminar) {
-                    if (file_exists(__DIR__ . "/../../" . $rutaEliminar)) {
-                        unlink(__DIR__ . "/../../" . $rutaEliminar);
+                // Si falla la creación del ticket, eliminar imágenes del SFTP
+                if (!empty($nombresImagenesSubidas)) {
+                    $conexionSftpLimpieza = new SFTP('docker-ftp-1', 22);
+                    if ($conexionSftpLimpieza->login('ftpuser', 'ftppassword')) {
+                        self::eliminarArchivosSubidos($conexionSftpLimpieza, $nombresImagenesSubidas);
+                        $conexionSftpLimpieza->disconnect();
                     }
                 }
                 
                 http_response_code(500);
                 echo json_encode([
                     'codigo' => 0,
-                    'mensaje' => 'Error al crear el ticket'
+                    'mensaje' => 'Error al crear el ticket en la base de datos'
                 ]);
                 exit;
             }
             
         } catch (Exception $e) {
-            // Si falla, eliminar imágenes subidas
-            if (isset($rutasImagenes) && !empty($rutasImagenes)) {
-                foreach ($rutasImagenes as $rutaEliminar) {
-                    if (file_exists(__DIR__ . "/../../" . $rutaEliminar)) {
-                        unlink(__DIR__ . "/../../" . $rutaEliminar);
+            // Si falla, eliminar imágenes del SFTP
+            if (isset($nombresImagenesSubidas) && !empty($nombresImagenesSubidas)) {
+                try {
+                    $servidorSftp = $_ENV['FILE_SERVER'] ?? 'ftp-1';
+                    $usuarioSftp = $_ENV['FILE_USER'] ?? 'ftpuser';
+                    $passwordSftp = $_ENV['FILE_PASSWORD'] ?? 'ftppassword';
+                    
+                    $conexionSftpLimpieza = new SFTP('docker-ftp-1', 22);
+                    if ($conexionSftpLimpieza->login('ftpuser', 'ftppassword')) {
+                        self::eliminarArchivosSubidos($conexionSftpLimpieza, $nombresImagenesSubidas);
+                        $conexionSftpLimpieza->disconnect();
                     }
+                } catch (Exception $excepcionLimpieza) {
+                    // Log del error de limpieza si es necesario
+                    error_log('Error al limpiar archivos SFTP: ' . $excepcionLimpieza->getMessage());
                 }
             }
 
@@ -285,8 +394,28 @@ class TicketController extends ActiveRecord
                 'codigo' => 0,
                 'mensaje' => 'Error interno del servidor',
                 'detalle' => $e->getMessage(),
+                'archivo' => $e->getFile(),
+                'linea' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
             ]);
             exit;
+        }
+    }
+
+    /**
+     * Función auxiliar para eliminar archivos subidos al SFTP en caso de error
+     */
+    private static function eliminarArchivosSubidos($conexionSftp, $rutasArchivos)
+    {
+        foreach ($rutasArchivos as $rutaArchivo) {
+            try {
+                if ($conexionSftp->file_exists($rutaArchivo)) {
+                    $conexionSftp->delete($rutaArchivo);
+                }
+            } catch (Exception $e) {
+                // Log del error si es necesario
+                error_log('Error al eliminar archivo SFTP: ' . $rutaArchivo . ' - ' . $e->getMessage());
+            }
         }
     }
 
@@ -318,3 +447,6 @@ class TicketController extends ActiveRecord
         }
     }
 }
+
+
+//Este es un commit de prueba

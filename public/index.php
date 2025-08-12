@@ -1,5 +1,6 @@
 <?php 
 require_once __DIR__ . '/../includes/app.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use MVC\Router;
 use Controllers\AppController;
@@ -42,7 +43,8 @@ $router->get('/historial/buscarFinalizadosAPI', [HistorialTicketsController::cla
 //estadisticas
 $router->get('/estadisticas', [EstadisticasController::class,'renderizarPagina']);
 
-
+// APIs de estadisticas
+$router->get('/estadisticas/buscarTicketsPorEstadoAPI', [EstadisticasController::class, 'buscarTicketsPorEstadoAPI']);
 
 
 $router->comprobarRutas();

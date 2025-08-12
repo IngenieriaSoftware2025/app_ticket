@@ -20,9 +20,10 @@ $router->get('/', [AppController::class,'index']);
 $router->get('/mis-tickets', [EstadoTicketController::class,'renderizarPagina']);
 
 // Rutas para tickets
-$router->get('/ticket', [TicketController::class,'renderizarPagina']);
+$router->get('/ticket', [TicketController::class,'index']);
 $router->post('/ticket/guardar', [TicketController::class,'guardarAPI']);
 $router->get('/ticket/aplicaciones', [TicketController::class, 'obtenerAplicacionesAPI']);
+$router->get('/ticket/datos-usuario', [TicketController::class, 'obtenerDatosUsuarioAPI']); // Opcional para futuro uso
 
 
 //estado-tickets

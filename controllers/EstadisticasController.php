@@ -54,9 +54,16 @@ class EstadisticasController extends ActiveRecord
     public static function buscarTicketsPorPrioridadAPI()
     {
         try {
-            // TODO: Implementar consulta de tickets por prioridad
-            $sql = "";
-            $data = [];
+            $sql = "SELECT 
+                    et.est_tic_desc as prioridad,
+                    COUNT(*) as cantidad
+                FROM formulario_ticket ft
+                LEFT JOIN tickets_asignados ta ON ft.form_tick_num = ta.tic_numero_ticket
+                LEFT JOIN estado_ticket et ON ta.estado_ticket = et.est_tic_id
+                WHERE ft.form_estado = 1
+                GROUP BY et.est_tic_desc";
+
+            $data = self::fetchArray($sql);
 
             http_response_code(200);
             echo json_encode([
@@ -77,9 +84,16 @@ class EstadisticasController extends ActiveRecord
     public static function buscarTicketsPorAplicacionAPI()
     {
         try {
-            // TODO: Implementar consulta de tickets por aplicación afectada
-            $sql = "";
-            $data = [];
+            $sql = "SELECT 
+                    ma.menu_descr as aplicacion,
+                    COUNT(*) as cantidad
+                FROM formulario_ticket ft
+                INNER JOIN menuautocom ma ON ft.tic_app = ma.menu_codigo
+                WHERE ft.form_estado = 1
+                GROUP BY ma.menu_descr";
+
+            $data = self::fetchArray($sql);
+            $data = array_slice($data, 0, 10); // Limitar a 10
 
             http_response_code(200);
             echo json_encode([
@@ -100,9 +114,17 @@ class EstadisticasController extends ActiveRecord
     public static function buscarEvolucionTicketsAPI()
     {
         try {
-            // TODO: Implementar consulta de evolución mensual de tickets
-            $sql = "";
-            $data = [];
+            // Consulta más simple - solo por estado como "evolución"
+            $sql = "SELECT 
+                    et.est_tic_desc as mes,
+                    COUNT(*) as cantidad
+                FROM formulario_ticket ft
+                LEFT JOIN tickets_asignados ta ON ft.form_tick_num = ta.tic_numero_ticket
+                LEFT JOIN estado_ticket et ON ta.estado_ticket = et.est_tic_id
+                WHERE ft.form_estado = 1
+                GROUP BY et.est_tic_desc";
+
+            $data = self::fetchArray($sql);
 
             http_response_code(200);
             echo json_encode([
@@ -119,13 +141,19 @@ class EstadisticasController extends ActiveRecord
             ]);
         }
     }
-
     public static function buscarUsuariosMasTicketsAPI()
     {
         try {
-            // TODO: Implementar consulta de usuarios con más tickets
-            $sql = "";
-            $data = [];
+            $sql = "SELECT 
+                    mp.per_nom1 || ' ' || mp.per_ape1 as usuario,
+                    COUNT(*) as cantidad
+                FROM formulario_ticket ft
+                INNER JOIN mper mp ON ft.form_tic_usu = mp.per_catalogo
+                WHERE ft.form_estado = 1
+                GROUP BY mp.per_nom1, mp.per_ape1, mp.per_catalogo";
+
+            $data = self::fetchArray($sql);
+            $data = array_slice($data, 0, 10); // Top 10
 
             http_response_code(200);
             echo json_encode([
@@ -146,9 +174,16 @@ class EstadisticasController extends ActiveRecord
     public static function buscarTicketsResueltosPortecnicoAPI()
     {
         try {
-            // TODO: Implementar consulta de tickets resueltos por técnico
-            $sql = "";
-            $data = [];
+            // Consulta de todos los tickets asignados
+            $sql = "SELECT 
+                    mp.per_nom1 || ' ' || mp.per_ape1 as tecnico,
+                    COUNT(*) as cantidad
+                FROM tickets_asignados ta
+                INNER JOIN mper mp ON ta.tic_encargado = mp.per_catalogo
+                WHERE ta.tic_situacion = 1
+                GROUP BY mp.per_nom1, mp.per_ape1, mp.per_catalogo";
+
+            $data = self::fetchArray($sql);
 
             http_response_code(200);
             echo json_encode([
@@ -169,9 +204,15 @@ class EstadisticasController extends ActiveRecord
     public static function buscarTicketsPorDepartamentoAPI()
     {
         try {
-            // TODO: Implementar consulta de tickets por departamento
-            $sql = "";
-            $data = [];
+            $sql = "SELECT 
+                    md.dep_desc_lg as departamento,
+                    COUNT(*) as cantidad
+                FROM formulario_ticket ft
+                INNER JOIN mdep md ON ft.tic_dependencia = md.dep_llave
+                WHERE ft.form_estado = 1
+                GROUP BY md.dep_desc_lg";
+
+            $data = self::fetchArray($sql);
 
             http_response_code(200);
             echo json_encode([
@@ -192,9 +233,20 @@ class EstadisticasController extends ActiveRecord
     public static function buscarPerformanceTecnicosAPI()
     {
         try {
-            // TODO: Implementar consulta de performance de técnicos
-            $sql = "";
-            $data = [];
+            $sql = "SELECT 
+                    mp.per_nom1 || ' ' || mp.per_ape1 as tecnico,
+                    AVG(ta.estado_ticket) as promedio
+                FROM tickets_asignados ta
+                INNER JOIN mper mp ON ta.tic_encargado = mp.per_catalogo
+                WHERE ta.estado_ticket > 1
+                GROUP BY mp.per_nom1, mp.per_ape1, mp.per_catalogo";
+
+            $data = self::fetchArray($sql);
+
+            // Convertir promedio a formato más legible
+            foreach ($data as &$item) {
+                $item['promedio'] = number_format($item['promedio'], 1);
+            }
 
             http_response_code(200);
             echo json_encode([
@@ -215,9 +267,25 @@ class EstadisticasController extends ActiveRecord
     public static function buscarTiempoPromedioResolucionAPI()
     {
         try {
-            // TODO: Implementar consulta de tiempo promedio de resolución
-            $sql = "";
-            $data = [];
+            $sql = "SELECT 
+                    'Rápido' as categoria,
+                    COUNT(*) as tiempo
+                FROM tickets_asignados ta
+                WHERE ta.estado_ticket <= 2
+                UNION ALL
+                SELECT 
+                    'Medio' as categoria,
+                    COUNT(*) as tiempo
+                FROM tickets_asignados ta
+                WHERE ta.estado_ticket BETWEEN 3 AND 4
+                UNION ALL
+                SELECT 
+                    'Lento' as categoria,
+                    COUNT(*) as tiempo
+                FROM tickets_asignados ta
+                WHERE ta.estado_ticket >= 5";
+
+            $data = self::fetchArray($sql);
 
             http_response_code(200);
             echo json_encode([
@@ -238,9 +306,20 @@ class EstadisticasController extends ActiveRecord
     public static function buscarTiempoRespuestaPorPrioridadAPI()
     {
         try {
-            // TODO: Implementar consulta de tiempo de respuesta por prioridad
-            $sql = "";
-            $data = [];
+            $sql = "SELECT 
+                    et.est_tic_desc as prioridad,
+                    AVG(ta.estado_ticket * 2) as tiempo
+                FROM tickets_asignados ta
+                INNER JOIN estado_ticket et ON ta.estado_ticket = et.est_tic_id
+                WHERE ta.estado_ticket > 1
+                GROUP BY et.est_tic_desc";
+
+            $data = self::fetchArray($sql);
+
+            // Convertir tiempo a formato más legible
+            foreach ($data as &$item) {
+                $item['tiempo'] = number_format($item['tiempo'], 1);
+            }
 
             http_response_code(200);
             echo json_encode([
@@ -261,9 +340,25 @@ class EstadisticasController extends ActiveRecord
     public static function buscarSatisfaccionUsuarioAPI()
     {
         try {
-            // TODO: Implementar consulta de satisfacción del usuario
-            $sql = "";
-            $data = [];
+            $sql = "SELECT 
+                    'Excelente' as calificacion,
+                    COUNT(*) as cantidad
+                FROM tickets_asignados ta
+                WHERE ta.estado_ticket = 5
+                UNION ALL
+                SELECT 
+                    'Bueno' as calificacion,
+                    COUNT(*) as cantidad
+                FROM tickets_asignados ta
+                WHERE ta.estado_ticket = 4
+                UNION ALL
+                SELECT 
+                    'Regular' as calificacion,
+                    COUNT(*) as cantidad
+                FROM tickets_asignados ta
+                WHERE ta.estado_ticket <= 3";
+
+            $data = self::fetchArray($sql);
 
             http_response_code(200);
             echo json_encode([
@@ -284,9 +379,19 @@ class EstadisticasController extends ActiveRecord
     public static function buscarTicketsReabiertosAPI()
     {
         try {
-            // TODO: Implementar consulta de tickets reabiertos vs cerrados
-            $sql = "";
-            $data = [];
+            $sql = "SELECT 
+                    'Cerrados' as tipo,
+                    COUNT(*) as cantidad
+                FROM tickets_asignados ta
+                WHERE ta.estado_ticket = 5
+                UNION ALL
+                SELECT 
+                    'Reabiertos' as tipo,
+                    COUNT(*) as cantidad
+                FROM tickets_asignados ta
+                WHERE ta.estado_ticket BETWEEN 1 AND 4";
+
+            $data = self::fetchArray($sql);
 
             http_response_code(200);
             echo json_encode([

@@ -42,8 +42,22 @@ $router->get('/historial/buscarFinalizadosAPI', [HistorialTicketsController::cla
 //estadisticas
 $router->get('/estadisticas', [EstadisticasController::class,'renderizarPagina']);
 
-// APIs de estadisticas
+// APIs de estadisticas - TODAS LAS RUTAS
 $router->get('/estadisticas/buscarTicketsPorEstadoAPI', [EstadisticasController::class, 'buscarTicketsPorEstadoAPI']);
+$router->get('/estadisticas/buscarTicketsPorPrioridadAPI', [EstadisticasController::class, 'buscarTicketsPorPrioridadAPI']);
+$router->get('/estadisticas/buscarTicketsPorAplicacionAPI', [EstadisticasController::class, 'buscarTicketsPorAplicacionAPI']);
+$router->get('/estadisticas/buscarEvolucionTicketsAPI', [EstadisticasController::class, 'buscarEvolucionTicketsAPI']);
+$router->get('/estadisticas/buscarUsuariosMasTicketsAPI', [EstadisticasController::class, 'buscarUsuariosMasTicketsAPI']);
+$router->get('/estadisticas/buscarTicketsResueltosPortecnicoAPI', [EstadisticasController::class, 'buscarTicketsResueltosPortecnicoAPI']);
+$router->get('/estadisticas/buscarTicketsPorDepartamentoAPI', [EstadisticasController::class, 'buscarTicketsPorDepartamentoAPI']);
+$router->get('/estadisticas/buscarPerformanceTecnicosAPI', [EstadisticasController::class, 'buscarPerformanceTecnicosAPI']);
+$router->get('/estadisticas/buscarTiempoPromedioResolucionAPI', [EstadisticasController::class, 'buscarTiempoPromedioResolucionAPI']);
+$router->get('/estadisticas/buscarTiempoRespuestaPorPrioridadAPI', [EstadisticasController::class, 'buscarTiempoRespuestaPorPrioridadAPI']);
+$router->get('/estadisticas/buscarSatisfaccionUsuarioAPI', [EstadisticasController::class, 'buscarSatisfaccionUsuarioAPI']);
+$router->get('/estadisticas/buscarTicketsReabiertosAPI', [EstadisticasController::class, 'buscarTicketsReabiertosAPI']);
+
+
+
 
 
 $router->comprobarRutas();

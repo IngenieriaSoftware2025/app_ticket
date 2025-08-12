@@ -8,6 +8,7 @@ use Controllers\TicketController;
 use Controllers\EstadisticasController;
 use Controllers\EstadoTicketController;
 use Controllers\HistorialTicketsController;
+use Controllers\AsignacionTicketController;
 
 
 $router = new Router();
@@ -20,10 +21,9 @@ $router->get('/', [AppController::class,'index']);
 $router->get('/mis-tickets', [EstadoTicketController::class,'renderizarPagina']);
 
 // Rutas para tickets
-$router->get('/ticket', [TicketController::class,'index']);
+$router->get('/ticket', [TicketController::class,'renderizarPagina']);
 $router->post('/ticket/guardar', [TicketController::class,'guardarAPI']);
 $router->get('/ticket/aplicaciones', [TicketController::class, 'obtenerAplicacionesAPI']);
-$router->get('/ticket/datos-usuario', [TicketController::class, 'obtenerDatosUsuarioAPI']); // Opcional para futuro uso
 
 
 //estado-tickets
@@ -35,9 +35,17 @@ $router->get('/estado-tickets/buscarTecnicosAPI', [EstadoTicketController::class
 $router->get('/estado-tickets/buscarEstadosAPI', [EstadoTicketController::class, 'buscarEstadosAPI']);
 $router->post('/estado-tickets/cambiarEstadoAPI', [EstadoTicketController::class, 'cambiarEstadoAPI']);
 
-//historial-tickets - OPTIMIZADO: solo una ruta API
+//asignacion-tickets
+$router->get('/asignacion', [AsignacionTicketController::class, 'renderizarPagina']);
+$router->get('/asignacion/buscarAPI', [AsignacionTicketController::class, 'buscarAPI']);
+$router->get('/asignacion/buscarOficialesAPI', [AsignacionTicketController::class, 'buscarOficialesAPI']);
+$router->post('/asignacion/asignarAPI', [AsignacionTicketController::class, 'asignarAPI']);
+
+//historial-tickets
 $router->get('/historial', [HistorialTicketsController::class, 'renderizarPagina']);
 $router->get('/historial/buscarAPI', [HistorialTicketsController::class, 'buscarAPI']);
+$router->get('/historial/buscarCreadosAPI', [HistorialTicketsController::class, 'buscarCreadosAPI']);
+$router->get('/historial/buscarFinalizadosAPI', [HistorialTicketsController::class, 'buscarFinalizadosAPI']);
 
 //estadisticas
 $router->get('/estadisticas', [EstadisticasController::class,'renderizarPagina']);
@@ -55,5 +63,9 @@ $router->get('/estadisticas/buscarTiempoPromedioResolucionAPI', [EstadisticasCon
 $router->get('/estadisticas/buscarTiempoRespuestaPorPrioridadAPI', [EstadisticasController::class, 'buscarTiempoRespuestaPorPrioridadAPI']);
 $router->get('/estadisticas/buscarSatisfaccionUsuarioAPI', [EstadisticasController::class, 'buscarSatisfaccionUsuarioAPI']);
 $router->get('/estadisticas/buscarTicketsReabiertosAPI', [EstadisticasController::class, 'buscarTicketsReabiertosAPI']);
+
+
+
+
 
 $router->comprobarRutas();

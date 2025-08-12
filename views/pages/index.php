@@ -396,6 +396,22 @@ $userName = $_SESSION['user'] ?? 'Usuario';
                     </div>
                 </div>
             </div>
+
+                        <!-- ASIGNACIÓN -->
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-img-top product-img">
+                        <img src="https://id4e.com/wp-content/uploads/2014/12/BLurb-Cuadrats3.png" alt="Estado Actual" style="display: block;">
+                    </div>
+                    <div class="card-body text-center">
+                        <h5 class="card-title fw-bold">
+                            <i class="bi bi-clock-fill me-2 text-warning"></i>Asignación de Tickets
+                        </h5>
+                        <p class="card-text text-muted">Asignación de tickets.</p>
+                        <a href="/app_ticket/asignacion" class="btn btn-warning">Ver Asignación de Tickets</a>
+                    </div>
+                </div>
+            </div>
             
             <!-- HISTORIAL -->
             <div class="col-md-4 mb-4">
@@ -408,7 +424,7 @@ $userName = $_SESSION['user'] ?? 'Usuario';
                             <i class="bi bi-clock-fill me-2 text-warning"></i>Historial Tickets
                         </h5>
                         <p class="card-text text-muted">Revisa el historial de tickets.</p>
-                        <a href="/app_ticket/historial" class="btn btn-warning">Ver Historial</a>
+                        <a href="/app_ticket/historial" class="btn btn-primary">Ver Historial</a>
                     </div>
                 </div>
             </div>
@@ -424,7 +440,7 @@ $userName = $_SESSION['user'] ?? 'Usuario';
                             <i class="bi bi-graph-up me-2 text-warning"></i>Estadisticas Generales
                         </h5>
                         <p class="card-text text-muted">Reportes y estadísticas del sistema de tickets.</p>
-                        <a href="/app_ticket/estadisticas" class="btn btn-primary">Ver Métricas</a>
+                        <a href="/app_ticket/estadisticas" class="btn btn-success">Ver Métricas</a>
                     </div>
                 </div>
             </div>

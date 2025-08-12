@@ -10,10 +10,37 @@ use phpseclib3\Net\SFTP;
 
 class TicketController extends ActiveRecord
 {
-
-    public static function renderizarPagina(Router $enrutador)
+    public static function index(Router $router)
     {
-        $enrutador->render('ticket/index', []);
+        $catalogo = $_SESSION['auth_user'];
+
+        $aplicaciones = ActiveRecord::fetcharray("SELECT * from grupo_menuautocom where gma_situacion = 1");
+        
+        // CONSULTA ACTUALIZADA
+        $datosUsuario = ActiveRecord::fetcharray("SELECT mp.per_catalogo, 
+                                        trim(mp.per_nom1)||  ' ' || trim(mp.per_nom2)|| ' ' || trim(mp.per_ape1) as nombre, 
+                                        mp.per_desc_empleo, md.dep_llave, md.dep_desc_md, 
+                                        mpo.oper_correo_personal, mpo.oper_celular_personal
+                                            FROM mper mp
+                                        INNER JOIN morg mo ON mp.per_plaza = mo.org_plaza  
+                                        INNER JOIN mdep md ON mo.org_dependencia = md.dep_llave
+                                        INNER JOIN mper_otros mpo ON mp.per_catalogo = mpo.oper_catalogo
+                                            WHERE mp.per_catalogo = $catalogo
+        ");
+
+        $rolUsuario = $datosUsuario; 
+        $telefonoUsuario = $datosUsuario; 
+        $nombreDependencia = $datosUsuario; 
+        $dependenciaUsuario = isset($datosUsuario[0]['dep_llave']) ? $datosUsuario[0]['dep_llave'] : '';
+
+        $router->render('ticket/index', [
+            'datosUsuario' => $datosUsuario,      
+            'rolUsuario' => $rolUsuario,         
+            'telefonoUsuario' => $telefonoUsuario,
+            'nombreDependencia' => $nombreDependencia,
+            'dependenciaUsuario' => $dependenciaUsuario, 
+            'aplicaciones' => $aplicaciones,
+        ]);
     }
 
     public static function guardarAPI()
@@ -41,13 +68,19 @@ class TicketController extends ActiveRecord
                 exit;
             }
 
-            // Obtener datos del usuario desde mper automáticamente
-            $consulta_usuario = "SELECT per_telefono, per_nom1, per_nom2, per_ape1, per_desc_empleo 
-                                FROM mper 
-                                WHERE per_catalogo = {$_POST['form_tic_usu']}";
-            $datos_usuario = self::fetchFirst($consulta_usuario);
+            // CONSULTA ACTUALIZADA - IDÉNTICA A index()
+            $datosUsuario = ActiveRecord::fetcharray("SELECT mp.per_catalogo, 
+                                        trim(mp.per_nom1)||  ' ' || trim(mp.per_nom2)|| ' ' || trim(mp.per_ape1) as nombre, 
+                                        mp.per_desc_empleo, md.dep_llave, md.dep_desc_md, 
+                                        mpo.oper_correo_personal, mpo.oper_celular_personal
+                                            FROM mper mp
+                                        INNER JOIN morg mo ON mp.per_plaza = mo.org_plaza  
+                                        INNER JOIN mdep md ON mo.org_dependencia = md.dep_llave
+                                        INNER JOIN mper_otros mpo ON mp.per_catalogo = mpo.oper_catalogo
+                                            WHERE mp.per_catalogo = {$_POST['form_tic_usu']}
+            ");
 
-            if (!$datos_usuario) {
+            if (empty($datosUsuario)) {
                 http_response_code(400);
                 echo json_encode([
                     'codigo' => 0,
@@ -56,8 +89,11 @@ class TicketController extends ActiveRecord
                 exit;
             }
 
-            // Asignar teléfono automáticamente
-            $_POST['tic_telefono'] = $datos_usuario['per_telefono'];
+            // Usar el primer elemento del array
+            $datos_usuario = $datosUsuario[0];
+
+            // Asignar teléfono automáticamente - USANDO CELULAR PERSONAL
+            $_POST['tic_telefono'] = $datos_usuario['oper_celular_personal'];
             
             if (empty($_POST['tic_telefono'])) {
                 http_response_code(400);
@@ -68,7 +104,7 @@ class TicketController extends ActiveRecord
                 exit;
             }
 
-            // Validar aplicación - CAMBIO: ahora validamos que exista en grupo_menuautocom
+            // Validar aplicación
             $_POST['tic_app'] = filter_var($_POST['tic_app'], FILTER_SANITIZE_NUMBER_INT);
             
             if (empty($_POST['tic_app']) || $_POST['tic_app'] < 1) {
@@ -80,12 +116,17 @@ class TicketController extends ActiveRecord
                 exit;
             }
 
-            // Validar que la aplicación seleccionada existe y está activa
-            $consulta_aplicacion = "SELECT gma_codigo, gma_desc 
-                                   FROM grupo_menuautocom 
-                                   WHERE gma_codigo = {$_POST['tic_app']} 
-                                   AND gma_situacion = '1'";
-            $aplicacion_valida = self::fetchFirst($consulta_aplicacion);
+            // USAR LA MISMA CONSULTA DE aplicaciones - AHORRAR LÍNEAS
+            $aplicaciones = ActiveRecord::fetcharray("SELECT * from grupo_menuautocom where gma_situacion = 1");
+            $aplicacion_valida = null;
+            
+            // Buscar la aplicación seleccionada en los datos ya obtenidos
+            foreach ($aplicaciones as $app) {
+                if ($app['gma_codigo'] == $_POST['tic_app']) {
+                    $aplicacion_valida = $app;
+                    break;
+                }
+            }
 
             if (!$aplicacion_valida) {
                 http_response_code(400);
@@ -96,7 +137,7 @@ class TicketController extends ActiveRecord
                 exit;
             }
 
-            // Validar correo electrónico (ingresado manualmente)
+            // Validar correo electrónico
             $_POST['tic_correo_electronico'] = filter_var($_POST['tic_correo_electronico'], FILTER_SANITIZE_EMAIL);
             
             if (!filter_var($_POST['tic_correo_electronico'], FILTER_VALIDATE_EMAIL)){
@@ -142,8 +183,9 @@ class TicketController extends ActiveRecord
             // Generar número de ticket único
             $_POST['form_tick_num'] = 'TK' . date('Ymd') . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
             $_POST['form_fecha_creacion'] = '';
-            $_POST['form_estado'] = 1; // Campo estado por defecto: 1 = Activo
+            $_POST['form_estado'] = 1;
 
+            
             // Validar y procesar imágenes si existen
             $rutas_imagenes = [];
             $nombres_imagenes_subidas = [];
@@ -360,10 +402,11 @@ class TicketController extends ActiveRecord
                     'data' => [
                         'numero_ticket' => $_POST['form_tick_num'],
                         'id' => $resultado['id'],
-                        'nombre_usuario' => trim($datos_usuario['per_nom1'] . ' ' . $datos_usuario['per_nom2'] . ' ' . $datos_usuario['per_ape1']),
-                        'telefono_usuario' => $datos_usuario['per_telefono'],
+                        'nombre_usuario' => $datos_usuario['nombre'],
+                        'telefono_usuario' => $datos_usuario['oper_celular_personal'],
                         'correo_usuario' => $_POST['tic_correo_electronico'],
-                        'aplicacion_seleccionada' => $aplicacion_valida['gma_desc'], // Nueva información
+                        'aplicacion_seleccionada' => $aplicacion_valida['gma_desc'],
+                        'dependencia_usuario' => $datos_usuario['dep_desc_md'], 
                         'imagenes_subidas' => count($rutas_imagenes),
                         'rutas_sftp' => $rutas_imagenes
                     ]
@@ -419,10 +462,9 @@ class TicketController extends ActiveRecord
         }
     }
 
-    /**
-     * Función auxiliar para eliminar archivos subidos al SFTP en caso de error
-     */
-    private static function eliminarArchivosSubidos($conexion_sftp, $rutas_archivos)
+    
+     //Función auxiliar para eliminar archivos subidos al SFTP en caso de error
+    public static function eliminarArchivosSubidos($conexion_sftp, $rutas_archivos)
     {
         foreach ($rutas_archivos as $ruta_archivo) {
             try {
@@ -441,15 +483,10 @@ class TicketController extends ActiveRecord
         getHeadersApi();
         
         try {
-            // CAMBIO PRINCIPAL: Consulta actualizada para usar grupo_menuautocom
-            $consulta_aplicaciones = "SELECT gma_codigo, gma_desc 
-                                     FROM grupo_menuautocom 
-                                     WHERE gma_situacion = '1' 
-                                     ORDER BY gma_desc";
-            $datos_aplicaciones = self::fetchArray($consulta_aplicaciones);
+            // USAR LA MISMA CONSULTA DE index() - AHORRAR LÍNEAS
+            $aplicaciones = ActiveRecord::fetcharray("SELECT * from grupo_menuautocom where gma_situacion = 1");
             
-            // Verificar si se encontraron aplicaciones
-            if (empty($datos_aplicaciones)) {
+            if (empty($aplicaciones)) {
                 http_response_code(200);
                 echo json_encode([
                     'codigo' => 1,
@@ -463,8 +500,8 @@ class TicketController extends ActiveRecord
             echo json_encode([
                 'codigo' => 1,
                 'mensaje' => 'Aplicaciones obtenidas correctamente',
-                'total_aplicaciones' => count($datos_aplicaciones),
-                'data' => $datos_aplicaciones
+                'total_aplicaciones' => count($aplicaciones),
+                'data' => $aplicaciones
             ]);
 
         } catch (Exception $excepcion) {
@@ -477,5 +514,3 @@ class TicketController extends ActiveRecord
         }
     }
 }
-
-//Este es un commit de prueba

@@ -1,16 +1,16 @@
 import Swal from "sweetalert2";
 
-const formularioTicket = document.getElementById('formTicket');
-const botonGuardar = document.getElementById('BtnEnviar');
-const botonLimpiar = document.getElementById('BtnLimpiar');
-const selectAplicacion = document.getElementById('tic_app');
-const inputImagen = document.getElementById('tic_imagen');
+const formulario_ticket = document.getElementById('formTicket');
+const boton_guardar = document.getElementById('BtnEnviar');
+const boton_limpiar = document.getElementById('BtnLimpiar');
+const select_aplicacion = document.getElementById('tic_app');
+const input_imagen = document.getElementById('tic_imagen');
 
-const cargarAplicaciones = async () => {
+const cargar_aplicaciones = async () => {
     try {
-        const nombreApp = window.location.pathname.split('/')[1];
-        // RUTA CORREGIDA - Cambio de 'obtenerAplicacionesAPI' a 'aplicaciones'
-        const url = `/${nombreApp}/ticket/aplicaciones`;
+        const nombre_app = window.location.pathname.split('/')[1];
+        // RUTA CORREGIDA - Usando la ruta del controlador
+        const url = `/${nombre_app}/ticket/aplicaciones`;
         
         const respuesta = await fetch(url);
         
@@ -22,13 +22,14 @@ const cargarAplicaciones = async () => {
         const { codigo, mensaje, data } = datos;
         
         if (codigo == 1) {
-            selectAplicacion.innerHTML = '<option value="">Seleccione la aplicación con problemas...</option>';
+            select_aplicacion.innerHTML = '<option value="">Seleccione la aplicación con problemas...</option>';
             
+            // CAMBIO PRINCIPAL: Usar gma_codigo y gma_desc en lugar de menu_codigo y menu_descr
             data.forEach(aplicacion => {
                 const opcion = document.createElement('option');
-                opcion.value = aplicacion.menu_codigo;
-                opcion.textContent = aplicacion.menu_descr;
-                selectAplicacion.appendChild(opcion);
+                opcion.value = aplicacion.gma_codigo;  // Cambio aquí
+                opcion.textContent = aplicacion.gma_desc; // Cambio aquí
+                select_aplicacion.appendChild(opcion);
             });
             
             console.log(`Se cargaron ${data.length} aplicaciones`);
@@ -53,26 +54,26 @@ const cargarAplicaciones = async () => {
     }
 }
 
-const guardarTicket = async (e) => {
+const guardar_ticket = async (e) => {
     e.preventDefault();
-    botonGuardar.disabled = true;
+    boton_guardar.disabled = true;
 
-    if (!validacionesEspecificas(formularioTicket)) {
-        botonGuardar.disabled = false;
+    if (!validaciones_especificas(formulario_ticket)) {
+        boton_guardar.disabled = false;
         return;
     }
 
-    const textoOriginal = botonGuardar.innerHTML;
-    botonGuardar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Creando Ticket...';
+    const texto_original = boton_guardar.innerHTML;
+    boton_guardar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Creando Ticket...';
 
     try {
-        const nombreApp = window.location.pathname.split('/')[1];
-        // RUTA CORREGIDA - Cambio de 'guardarAPI' a 'guardar'
-        const url = `/${nombreApp}/ticket/guardar`;
+        const nombre_app = window.location.pathname.split('/')[1];
+        // RUTA CORREGIDA - Usando la ruta del controlador
+        const url = `/${nombre_app}/ticket/guardar`;
         
         const respuesta = await fetch(url, {
             method: 'POST',
-            body: new FormData(formularioTicket)
+            body: new FormData(formulario_ticket)
         });
         
         const datos = await respuesta.json();
@@ -87,8 +88,8 @@ const guardarTicket = async (e) => {
                 showConfirmButton: true,
             });
 
-            mostrarModalTicket(data);
-            limpiarFormularioCompleto();
+            mostrar_modal_ticket(data);
+            limpiar_formulario_completo();
         } else {
             await Swal.fire({
                 position: "center",
@@ -110,17 +111,17 @@ const guardarTicket = async (e) => {
         });
     }
     
-    botonGuardar.innerHTML = textoOriginal;
-    botonGuardar.disabled = false;
+    boton_guardar.innerHTML = texto_original;
+    boton_guardar.disabled = false;
 }
 
-const mostrarModalTicket = (datosTicket) => {
+const mostrar_modal_ticket = (datos_ticket) => {
     const modal = document.getElementById('modalTicket');
-    const numeroTicket = document.getElementById('ticketNumero');
-    const fechaTicket = document.getElementById('ticketFecha');
-    const descripcionTicket = document.getElementById('ticketDescripcion');
-    const seccionImagen = document.getElementById('imagenSection');
-    const ticketCorreo = document.getElementById('ticketCorreo');
+    const numero_ticket = document.getElementById('ticketNumero');
+    const fecha_ticket = document.getElementById('ticketFecha');
+    const descripcion_ticket = document.getElementById('ticketDescripcion');
+    const seccion_imagen = document.getElementById('imagenSection');
+    const ticket_correo = document.getElementById('ticketCorreo');
     
     if (!modal) {
         console.error('No se encontró el modal con id "modalTicket"');
@@ -128,33 +129,33 @@ const mostrarModalTicket = (datosTicket) => {
     }
     
     // Llenar datos del ticket
-    if (numeroTicket) numeroTicket.textContent = datosTicket.numero_ticket;
-    if (fechaTicket) fechaTicket.textContent = new Date().toLocaleDateString('es-ES');
-    if (descripcionTicket) descripcionTicket.textContent = formularioTicket.querySelector('#tic_comentario_falla').value;
-    if (ticketCorreo) ticketCorreo.textContent = formularioTicket.querySelector('#tic_correo_electronico').value;
+    if (numero_ticket) numero_ticket.textContent = datos_ticket.numero_ticket;
+    if (fecha_ticket) fecha_ticket.textContent = new Date().toLocaleDateString('es-ES');
+    if (descripcion_ticket) descripcion_ticket.textContent = formulario_ticket.querySelector('#tic_comentario_falla').value;
+    if (ticket_correo) ticket_correo.textContent = formulario_ticket.querySelector('#tic_correo_electronico').value;
     
     // Manejar múltiples imágenes si existen
-    const inputImagenFormulario = formularioTicket.querySelector('#tic_imagen');
-    if (inputImagenFormulario && inputImagenFormulario.files && inputImagenFormulario.files.length > 0 && seccionImagen) {
+    const input_imagen_formulario = formulario_ticket.querySelector('#tic_imagen');
+    if (input_imagen_formulario && input_imagen_formulario.files && input_imagen_formulario.files.length > 0 && seccion_imagen) {
         // Limpiar el contenedor de imágenes
-        const contenedorImagen = seccionImagen.querySelector('.imagen-container');
-        contenedorImagen.innerHTML = '';
+        const contenedor_imagen = seccion_imagen.querySelector('.imagen-container');
+        contenedor_imagen.innerHTML = '';
         
         // Crear grid para múltiples imágenes
-        const gridImagenes = document.createElement('div');
-        gridImagenes.className = 'row g-2';
+        const grid_imagenes = document.createElement('div');
+        grid_imagenes.className = 'row g-2';
         
         // Mostrar todas las imágenes
-        for (let i = 0; i < inputImagenFormulario.files.length; i++) {
-            const archivo = inputImagenFormulario.files[i];
+        for (let i = 0; i < input_imagen_formulario.files.length; i++) {
+            const archivo = input_imagen_formulario.files[i];
             const lector = new FileReader();
             
             lector.onload = function(e) {
-                const divColumna = document.createElement('div');
-                divColumna.className = inputImagenFormulario.files.length === 1 ? 'col-12' : 'col-md-6 col-sm-12';
+                const div_columna = document.createElement('div');
+                div_columna.className = input_imagen_formulario.files.length === 1 ? 'col-12' : 'col-md-6 col-sm-12';
                 
-                const contenedorImg = document.createElement('div');
-                contenedorImg.className = 'position-relative text-center';
+                const contenedor_img = document.createElement('div');
+                contenedor_img.className = 'position-relative text-center';
                 
                 const img = document.createElement('img');
                 img.src = e.target.result;
@@ -168,28 +169,28 @@ const mostrarModalTicket = (datosTicket) => {
                 etiqueta.className = 'position-absolute top-0 start-0 badge bg-primary m-1';
                 etiqueta.textContent = `${i + 1}`;
                 
-                contenedorImg.appendChild(img);
-                if (inputImagenFormulario.files.length > 1) {
-                    contenedorImg.appendChild(etiqueta);
+                contenedor_img.appendChild(img);
+                if (input_imagen_formulario.files.length > 1) {
+                    contenedor_img.appendChild(etiqueta);
                 }
-                divColumna.appendChild(contenedorImg);
-                gridImagenes.appendChild(divColumna);
+                div_columna.appendChild(contenedor_img);
+                grid_imagenes.appendChild(div_columna);
             };
             lector.readAsDataURL(archivo);
         }
         
-        contenedorImagen.appendChild(gridImagenes);
-        seccionImagen.style.display = 'block';
+        contenedor_imagen.appendChild(grid_imagenes);
+        seccion_imagen.style.display = 'block';
         
         // Actualizar el título de la sección
-        const tituloImagen = seccionImagen.querySelector('.info-section-title');
-        if (tituloImagen) {
-            tituloImagen.textContent = inputImagenFormulario.files.length === 1 ? 
+        const titulo_imagen = seccion_imagen.querySelector('.info-section-title');
+        if (titulo_imagen) {
+            titulo_imagen.textContent = input_imagen_formulario.files.length === 1 ? 
                 'Imagen Adjunta' : 
-                `Imágenes Adjuntas (${inputImagenFormulario.files.length})`;
+                `Imágenes Adjuntas (${input_imagen_formulario.files.length})`;
         }
-    } else if (seccionImagen) {
-        seccionImagen.style.display = 'none';
+    } else if (seccion_imagen) {
+        seccion_imagen.style.display = 'none';
     }
     
     // Mostrar modal
@@ -201,7 +202,7 @@ const mostrarModalTicket = (datosTicket) => {
     }, 10);
 }
 
-const cerrarModalTicket = () => {
+const cerrar_modal_ticket = () => {
     const modal = document.getElementById('modalTicket');
     if (modal) {
         modal.style.opacity = '0';
@@ -211,8 +212,8 @@ const cerrarModalTicket = () => {
     }
 }
 
-const limpiarFormulario = async () => {
-    const alertaConfirmarLimpiar = await Swal.fire({
+const limpiar_formulario = async () => {
+    const alerta_confirmar_limpiar = await Swal.fire({
         position: "center",
         icon: "warning",
         title: "¿Limpiar formulario?",
@@ -224,8 +225,8 @@ const limpiarFormulario = async () => {
         showCancelButton: true
     });
 
-    if (alertaConfirmarLimpiar.isConfirmed) {
-        limpiarFormularioCompleto();
+    if (alerta_confirmar_limpiar.isConfirmed) {
+        limpiar_formulario_completo();
         
         await Swal.fire({
             position: "center",
@@ -236,38 +237,38 @@ const limpiarFormulario = async () => {
     }
 }
 
-const limpiarFormularioCompleto = () => {
-    formularioTicket.reset();
+const limpiar_formulario_completo = () => {
+    formulario_ticket.reset();
     
     // Limpiar clases de validación
-    limpiarClasesValidacion();
+    limpiar_clases_validacion();
     
     // Limpiar vista previa de imágenes
-    const contenedorVistaPrevia = document.getElementById('contenedorVistaPrevia');
-    const imagenesPreview = document.getElementById('imagenesPreview');
-    if (contenedorVistaPrevia) {
-        contenedorVistaPrevia.classList.add('d-none');
+    const contenedor_vista_previa = document.getElementById('contenedorVistaPrevia');
+    const imagenes_preview = document.getElementById('imagenesPreview');
+    if (contenedor_vista_previa) {
+        contenedor_vista_previa.classList.add('d-none');
     }
-    if (imagenesPreview) {
-        imagenesPreview.innerHTML = '';
+    if (imagenes_preview) {
+        imagenes_preview.innerHTML = '';
     }
     
     // Recargar aplicaciones después de limpiar
-    cargarAplicaciones();
+    cargar_aplicaciones();
     
     // Enfocar primer campo
-    const primerCampo = formularioTicket.querySelector('select');
-    if (primerCampo) {
-        primerCampo.focus();
+    const primer_campo = formulario_ticket.querySelector('select');
+    if (primer_campo) {
+        primer_campo.focus();
     }
 }
 
-const mostrarVistaPrevia = (evento) => {
+const mostrar_vista_previa = (evento) => {
     const archivos = evento.target.files;
     const contenedor = document.getElementById('contenedorVistaPrevia');
-    const imagenesPreview = document.getElementById('imagenesPreview');
+    const imagenes_preview = document.getElementById('imagenesPreview');
     
-    if (!archivos || archivos.length === 0 || !contenedor || !imagenesPreview) return;
+    if (!archivos || archivos.length === 0 || !contenedor || !imagenes_preview) return;
     
     // Validar máximo de imágenes
     if (archivos.length > 5) {
@@ -283,9 +284,9 @@ const mostrarVistaPrevia = (evento) => {
     }
     
     // Limpiar vista previa anterior
-    imagenesPreview.innerHTML = '';
+    imagenes_preview.innerHTML = '';
     
-    let imagenesValidas = 0;
+    let imagenes_validas = 0;
     
     for (let i = 0; i < archivos.length; i++) {
         const archivo = archivos[i];
@@ -319,11 +320,11 @@ const mostrarVistaPrevia = (evento) => {
         // Mostrar vista previa
         const lector = new FileReader();
         lector.onload = function(e) {
-            const divColumna = document.createElement('div');
-            divColumna.className = 'col-md-4 col-sm-6';
+            const div_columna = document.createElement('div');
+            div_columna.className = 'col-md-4 col-sm-6';
             
-            const contenedorImg = document.createElement('div');
-            contenedorImg.className = 'position-relative';
+            const contenedor_img = document.createElement('div');
+            contenedor_img.className = 'position-relative';
             
             const img = document.createElement('img');
             img.src = e.target.result;
@@ -337,13 +338,13 @@ const mostrarVistaPrevia = (evento) => {
             etiqueta.className = 'position-absolute top-0 start-0 badge bg-primary m-1';
             etiqueta.textContent = `${i + 1}`;
             
-            contenedorImg.appendChild(img);
-            contenedorImg.appendChild(etiqueta);
-            divColumna.appendChild(contenedorImg);
-            imagenesPreview.appendChild(divColumna);
+            contenedor_img.appendChild(img);
+            contenedor_img.appendChild(etiqueta);
+            div_columna.appendChild(contenedor_img);
+            imagenes_preview.appendChild(div_columna);
             
-            imagenesValidas++;
-            if (imagenesValidas === archivos.length) {
+            imagenes_validas++;
+            if (imagenes_validas === archivos.length) {
                 contenedor.classList.remove('d-none');
             }
         };
@@ -351,14 +352,14 @@ const mostrarVistaPrevia = (evento) => {
     }
 }
 
-const validacionesEspecificas = (formulario) => {
+const validaciones_especificas = (formulario) => {
     const aplicacion = formulario.querySelector('#tic_app');
-    const correoElectronico = formulario.querySelector('#tic_correo_electronico');
+    const correo_electronico = formulario.querySelector('#tic_correo_electronico');
     const comentario = formulario.querySelector('#tic_comentario_falla');
     
     // Validar aplicación
     if (!aplicacion || !aplicacion.value.trim()) {
-        mostrarErrorCampo('tic_app', 'Debe seleccionar una aplicación');
+        mostrar_error_campo('tic_app', 'Debe seleccionar una aplicación');
         if (aplicacion) aplicacion.focus();
         Swal.fire({
             position: "center",
@@ -370,9 +371,9 @@ const validacionesEspecificas = (formulario) => {
     }
     
     // Validar correo electrónico
-    if (!correoElectronico || !correoElectronico.value.trim()) {
-        mostrarErrorCampo('tic_correo_electronico', 'El correo electrónico es obligatorio');
-        if (correoElectronico) correoElectronico.focus();
+    if (!correo_electronico || !correo_electronico.value.trim()) {
+        mostrar_error_campo('tic_correo_electronico', 'El correo electrónico es obligatorio');
+        if (correo_electronico) correo_electronico.focus();
         Swal.fire({
             position: "center",
             icon: "error",
@@ -382,9 +383,9 @@ const validacionesEspecificas = (formulario) => {
         return false;
     }
     
-    if (!validarCorreoElectronico(correoElectronico.value)) {
-        mostrarErrorCampo('tic_correo_electronico', 'Ingrese un correo electrónico válido');
-        if (correoElectronico) correoElectronico.focus();
+    if (!validar_correo_electronico(correo_electronico.value)) {
+        mostrar_error_campo('tic_correo_electronico', 'Ingrese un correo electrónico válido');
+        if (correo_electronico) correo_electronico.focus();
         Swal.fire({
             position: "center",
             icon: "error",
@@ -396,7 +397,7 @@ const validacionesEspecificas = (formulario) => {
     
     // Validar longitud del comentario
     if (!comentario || !comentario.value.trim()) {
-        mostrarErrorCampo('tic_comentario_falla', 'La descripción del problema es obligatoria');
+        mostrar_error_campo('tic_comentario_falla', 'La descripción del problema es obligatoria');
         if (comentario) comentario.focus();
         Swal.fire({
             position: "center",
@@ -408,7 +409,7 @@ const validacionesEspecificas = (formulario) => {
     }
     
     if (comentario.value.trim().length < 15) {
-        mostrarErrorCampo('tic_comentario_falla', 'La descripción debe tener al menos 15 caracteres');
+        mostrar_error_campo('tic_comentario_falla', 'La descripción debe tener al menos 15 caracteres');
         if (comentario) comentario.focus();
         Swal.fire({
             position: "center",
@@ -422,29 +423,29 @@ const validacionesEspecificas = (formulario) => {
     return true;
 }
 
-const validarCorreoElectronico = (correo) => {
-    const expresionRegular = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return expresionRegular.test(correo);
+const validar_correo_electronico = (correo) => {
+    const expresion_regular = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return expresion_regular.test(correo);
 }
 
-const mostrarErrorCampo = (idCampo, mensaje) => {
-    const campo = document.getElementById(idCampo);
+const mostrar_error_campo = (id_campo, mensaje) => {
+    const campo = document.getElementById(id_campo);
     if (!campo) return;
     
     campo.classList.remove('is-valid');
     campo.classList.add('is-invalid');
     
     // Buscar o crear mensaje de error
-    let mensajeError = campo.parentElement.querySelector('.invalid-feedback');
-    if (!mensajeError) {
-        mensajeError = document.createElement('div');
-        mensajeError.className = 'invalid-feedback';
-        campo.parentElement.appendChild(mensajeError);
+    let mensaje_error = campo.parentElement.querySelector('.invalid-feedback');
+    if (!mensaje_error) {
+        mensaje_error = document.createElement('div');
+        mensaje_error.className = 'invalid-feedback';
+        campo.parentElement.appendChild(mensaje_error);
     }
-    mensajeError.textContent = mensaje;
+    mensaje_error.textContent = mensaje;
 }
 
-const limpiarClasesValidacion = () => {
+const limpiar_clases_validacion = () => {
     const formulario = document.getElementById('formTicket');
     const campos = formulario.querySelectorAll('input, select, textarea');
     campos.forEach(campo => {
@@ -452,24 +453,24 @@ const limpiarClasesValidacion = () => {
     });
     
     // Limpiar mensajes de error
-    const mensajesError = formulario.querySelectorAll('.invalid-feedback');
-    mensajesError.forEach(mensaje => mensaje.remove());
+    const mensajes_error = formulario.querySelectorAll('.invalid-feedback');
+    mensajes_error.forEach(mensaje => mensaje.remove());
 }
 
 // Hacer la función global para que pueda ser llamada desde el HTML
-window.cerrarModalTicket = cerrarModalTicket;
+window.cerrarModalTicket = cerrar_modal_ticket;
 
 // Cargar datos iniciales
-cargarAplicaciones();
+cargar_aplicaciones();
 
 // Configurar contador de caracteres al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
-    const areaTexto = document.getElementById('tic_comentario_falla');
+    const area_texto = document.getElementById('tic_comentario_falla');
     const contador = document.getElementById('contadorCaracteres');
     
-    if (areaTexto && contador) {
-        const actualizarContador = () => {
-            const longitud = areaTexto.value.length;
+    if (area_texto && contador) {
+        const actualizar_contador = () => {
+            const longitud = area_texto.value.length;
             contador.textContent = longitud;
             
             if (longitud < 15) {
@@ -479,19 +480,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
         
-        areaTexto.addEventListener('input', actualizarContador);
-        areaTexto.addEventListener('keyup', actualizarContador);
-        actualizarContador();
+        area_texto.addEventListener('input', actualizar_contador);
+        area_texto.addEventListener('keyup', actualizar_contador);
+        actualizar_contador();
     }
 });
 
 // Eventos del formulario
-formularioTicket.addEventListener('submit', guardarTicket);
-if (botonLimpiar) {
-    botonLimpiar.addEventListener('click', limpiarFormulario);
+formulario_ticket.addEventListener('submit', guardar_ticket);
+if (boton_limpiar) {
+    boton_limpiar.addEventListener('click', limpiar_formulario);
 }
 
 // Event listener para vista previa de imagen
-if (inputImagen) {
-    inputImagen.addEventListener('change', mostrarVistaPrevia);
+if (input_imagen) {
+    input_imagen.addEventListener('change', mostrar_vista_previa);
 }

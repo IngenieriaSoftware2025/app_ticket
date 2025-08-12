@@ -13,8 +13,9 @@ CREATE TABLE formulario_ticket (
     form_estado SMALLINT DEFAULT 1,
     FOREIGN KEY (form_tic_usu) REFERENCES mper(per_catalogo),
     FOREIGN KEY (tic_dependencia) REFERENCES mdep(dep_llave),
-    FOREIGN KEY (tic_app) REFERENCES grupo_menuautocom(GRUPO_MENUAUTOCOM)
+    FOREIGN KEY (tic_app) REFERENCES grupo_menuautocom(gma_codigo)
 );
+
 
 
 CREATE TABLE tickets_asignados (

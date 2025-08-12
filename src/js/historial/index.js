@@ -2,47 +2,40 @@ import Swal from "sweetalert2";
 import DataTable from "datatables.net-bs5";
 import { lenguaje } from "../lenguaje";
 
+// Elementos del DOM
 const btnRecibidos = document.getElementById('btnRecibidos');
 const btnFinalizados = document.getElementById('btnFinalizados');
 const btnRechazados = document.getElementById('btnRechazados');
 const indicadorVista = document.getElementById('indicadorVista');
 const textoIndicador = document.getElementById('textoIndicador');
 
-let vistaActual = 'recibidos'; // Por defecto mostrar recibidos
+// Estado actual de la vista
+let vistaActual = 'recibidos';
 
+// Función principal para buscar tickets
 const BuscarTicketsHistorial = async () => {
     const fechaInicio = document.getElementById('filtroFechaInicio').value;
     const fechaFin = document.getElementById('filtroFechaFin').value;
 
     let url = `/app_ticket/historial/buscarAPI?tipo=${vistaActual}`;
+    
+    // Agregar filtros de fecha si existen
     const params = new URLSearchParams();
-
     if (fechaInicio) params.append('fecha_inicio', fechaInicio);
     if (fechaFin) params.append('fecha_fin', fechaFin);
-
-    if (params.toString()) {
-        url += '&' + params.toString();
-    }
-
-    const config = {
-        method: 'GET'
-    }
+    if (params.toString()) url += '&' + params.toString();
 
     try {
-        const respuesta = await fetch(url, config);
+        const respuesta = await fetch(url);
         const datos = await respuesta.json();
         const { codigo, mensaje, data } = datos;
 
         if (codigo == 1) {
-            console.log('Tickets del historial encontrados:', data);
-            
-            // NO organizar por estados, mostrar lista simple
+            // Actualizar tabla con los datos
             if (datatable) {
                 datatable.clear().draw();
                 datatable.rows.add(data).draw();
             }
-
-            // Actualizar indicador
             actualizarIndicador();
         } else {
             await Swal.fire({
@@ -66,64 +59,91 @@ const BuscarTicketsHistorial = async () => {
     }
 }
 
-const BuscarTicketsRecibidos = async () => {
-    vistaActual = 'recibidos';
-    
-    // Cambiar estado de botones
-    btnRecibidos.classList.remove('btn-outline-primary');
-    btnRecibidos.classList.add('btn-primary');
-    btnFinalizados.classList.remove('btn-success');
-    btnFinalizados.classList.add('btn-outline-success');
-    btnRechazados.classList.remove('btn-danger');
-    btnRechazados.classList.add('btn-outline-danger');
-
+// Cambiar vista y actualizar botones
+const cambiarVista = async (nuevaVista) => {
+    vistaActual = nuevaVista;
+    actualizarBotones();
     await BuscarTicketsHistorial();
 }
 
-const BuscarTicketsFinalizados = async () => {
-    vistaActual = 'finalizados';
-    
-    // Cambiar estado de botones
-    btnFinalizados.classList.remove('btn-outline-success');
-    btnFinalizados.classList.add('btn-success');
-    btnRecibidos.classList.remove('btn-primary');
-    btnRecibidos.classList.add('btn-outline-primary');
-    btnRechazados.classList.remove('btn-danger');
-    btnRechazados.classList.add('btn-outline-danger');
+// Actualizar estilos de botones según la vista actual
+const actualizarBotones = () => {
+    // Limpiar todos los botones
+    btnRecibidos.className = 'btn btn-outline-primary btn-lg px-4';
+    btnFinalizados.className = 'btn btn-outline-success btn-lg px-4';
+    btnRechazados.className = 'btn btn-outline-danger btn-lg px-4';
 
-    await BuscarTicketsHistorial();
-}
-
-const BuscarTicketsRechazados = async () => {
-    vistaActual = 'rechazados';
-    
-    // Cambiar estado de botones
-    btnRechazados.classList.remove('btn-outline-danger');
-    btnRechazados.classList.add('btn-danger');
-    btnRecibidos.classList.remove('btn-primary');
-    btnRecibidos.classList.add('btn-outline-primary');
-    btnFinalizados.classList.remove('btn-success');
-    btnFinalizados.classList.add('btn-outline-success');
-
-    await BuscarTicketsHistorial();
-}
-
-const actualizarIndicador = () => {
-    if (vistaActual === 'recibidos') {
-        indicadorVista.classList.remove('alert-success', 'alert-danger');
-        indicadorVista.classList.add('alert-info');
-        textoIndicador.innerHTML = '<i class="bi bi-plus-circle me-2"></i>Mostrando tickets recibidos (en proceso)';
-    } else if (vistaActual === 'finalizados') {
-        indicadorVista.classList.remove('alert-info', 'alert-danger');
-        indicadorVista.classList.add('alert-success');
-        textoIndicador.innerHTML = '<i class="bi bi-check-circle me-2"></i>Mostrando tickets finalizados (completados)';
-    } else if (vistaActual === 'rechazados') {
-        indicadorVista.classList.remove('alert-info', 'alert-success');
-        indicadorVista.classList.add('alert-danger');
-        textoIndicador.innerHTML = '<i class="bi bi-x-circle me-2"></i>Mostrando tickets rechazados';
+    // Activar el botón correspondiente
+    switch(vistaActual) {
+        case 'recibidos':
+            btnRecibidos.className = 'btn btn-primary btn-lg px-4';
+            break;
+        case 'finalizados':
+            btnFinalizados.className = 'btn btn-success btn-lg px-4';
+            break;
+        case 'rechazados':
+            btnRechazados.className = 'btn btn-danger btn-lg px-4';
+            break;
     }
 }
 
+// Actualizar texto del indicador
+const actualizarIndicador = () => {
+    const iconos = {
+        'recibidos': 'bi-plus-circle',
+        'finalizados': 'bi-check-circle', 
+        'rechazados': 'bi-x-circle'
+    };
+    
+    const clases = {
+        'recibidos': 'alert-info',
+        'finalizados': 'alert-success',
+        'rechazados': 'alert-danger'
+    };
+    
+    const textos = {
+        'recibidos': 'Mostrando tickets recibidos (en proceso)',
+        'finalizados': 'Mostrando tickets finalizados (completados)',
+        'rechazados': 'Mostrando tickets rechazados'
+    };
+
+    // Limpiar clases anteriores
+    indicadorVista.className = `alert text-center ${clases[vistaActual]}`;
+    
+    // Actualizar contenido
+    textoIndicador.innerHTML = `<i class="${iconos[vistaActual]} me-2"></i>${textos[vistaActual]}`;
+}
+
+// Mostrar detalles del ticket en modal
+const mostrarDetalleTicket = (event) => {
+    const ticket = JSON.parse(event.currentTarget.dataset.ticket);
+    
+    document.getElementById('detalleNumero').textContent = ticket.form_tick_num;
+    document.getElementById('detalleEstado').textContent = ticket.estado_descripcion;
+    document.getElementById('detalleFecha').textContent = ticket.form_fecha_creacion;
+    document.getElementById('detalleSolicitante').textContent = ticket.solicitante_nombre;
+    document.getElementById('detalleEmail').textContent = ticket.tic_correo_electronico;
+    document.getElementById('detalleDependencia').textContent = ticket.dependencia_nombre;
+    document.getElementById('detalleDescripcion').textContent = ticket.tic_comentario_falla;
+    
+    // Manejo de imagen
+    const imagenContainer = document.getElementById('detalleImagenContainer');
+    const imagen = document.getElementById('detalleImagen');
+    
+    if (ticket.tic_imagen && ticket.tic_imagen.trim() !== '' && ticket.tic_imagen !== 'null') {
+        try {
+            imagen.src = `/${ticket.tic_imagen}`;
+            imagenContainer.style.display = 'block';
+        } catch (error) {
+            console.log('Error al cargar imagen:', error);
+            imagenContainer.style.display = 'none';
+        }
+    } else {
+        imagenContainer.style.display = 'none';
+    }
+}
+
+// Configuración de DataTable
 const datatable = new DataTable('#TableHistorialTickets', {
     dom: `
         <"row mt-3 justify-content-between" 
@@ -145,9 +165,7 @@ const datatable = new DataTable('#TableHistorialTickets', {
             title: 'No.',
             data: null,
             width: '3%',
-            render: (data, type, row, meta) => {
-                return meta.row + 1;
-            }
+            render: (data, type, row, meta) => meta.row + 1
         },
         { 
             title: 'Número Ticket', 
@@ -172,14 +190,14 @@ const datatable = new DataTable('#TableHistorialTickets', {
             data: 'estado_descripcion',
             width: '12%',
             render: (data, type, row) => {
-                let badgeClass = 'bg-secondary';
-                switch(data) {
-                    case 'RECIBIDO': badgeClass = 'bg-info'; break;
-                    case 'EN PROCESO': badgeClass = 'bg-primary'; break;
-                    case 'FINALIZADO': badgeClass = 'bg-success'; break;
-                    case 'RECHAZADO': badgeClass = 'bg-danger'; break;
-                }
+                const badgeClasses = {
+                    'RECIBIDO': 'bg-info',
+                    'EN PROCESO': 'bg-primary', 
+                    'FINALIZADO': 'bg-success',
+                    'RECHAZADO': 'bg-danger'
+                };
                 
+                const badgeClass = badgeClasses[data] || 'bg-secondary';
                 return `<span class="badge ${badgeClass}">${data}</span>`;
             }
         },
@@ -195,7 +213,6 @@ const datatable = new DataTable('#TableHistorialTickets', {
             searchable: false,
             orderable: false,
             render: (data, type, row, meta) => {
-                // Solo botón de ver detalles para el historial
                 return `
                     <div class='d-flex justify-content-center'>
                         <button class='btn btn-info btn-sm ver' 
@@ -209,55 +226,22 @@ const datatable = new DataTable('#TableHistorialTickets', {
                 `;
             }
         }
-    ],
-    rowCallback: function(row, data) {
-        // Sin separadores, tabla normal
-    }
+    ]
 });
 
-const mostrarDetalleTicket = (event) => {
-    const ticket = JSON.parse(event.currentTarget.dataset.ticket);
-    
-    document.getElementById('detalleNumero').textContent = ticket.form_tick_num;
-    document.getElementById('detalleEstado').textContent = ticket.estado_descripcion;
-    document.getElementById('detalleFecha').textContent = ticket.form_fecha_creacion;
-    document.getElementById('detalleSolicitante').textContent = ticket.solicitante_nombre;
-    document.getElementById('detalleEmail').textContent = ticket.tic_correo_electronico;
-    document.getElementById('detalleDependencia').textContent = ticket.dependencia_nombre;
-    document.getElementById('detalleDescripcion').textContent = ticket.tic_comentario_falla;
-    
-    const imagenContainer = document.getElementById('detalleImagenContainer');
-    const imagen = document.getElementById('detalleImagen');
-    
-    // Manejar la imagen de forma segura
-    if (ticket.tic_imagen && ticket.tic_imagen.trim() !== '' && ticket.tic_imagen !== 'null') {
-        try {
-            imagen.src = `/${ticket.tic_imagen}`;
-            imagenContainer.style.display = 'block';
-        } catch (error) {
-            console.log('Error al cargar imagen:', error);
-            imagenContainer.style.display = 'none';
-        }
-    } else {
-        imagenContainer.style.display = 'none';
-    }
-}
-
-// Eventos para filtros
+// Event Listeners
 document.getElementById('filtroFechaInicio').addEventListener('change', BuscarTicketsHistorial);
 document.getElementById('filtroFechaFin').addEventListener('change', BuscarTicketsHistorial);
 
-// Eventos para botones de navegación
-btnRecibidos.addEventListener('click', BuscarTicketsRecibidos);
-btnFinalizados.addEventListener('click', BuscarTicketsFinalizados);
-btnRechazados.addEventListener('click', BuscarTicketsRechazados);
+btnRecibidos.addEventListener('click', () => cambiarVista('recibidos'));
+btnFinalizados.addEventListener('click', () => cambiarVista('finalizados'));
+btnRechazados.addEventListener('click', () => cambiarVista('rechazados'));
 
-// Cargar tickets recibidos automáticamente al inicio
+datatable.on('click', '.ver', mostrarDetalleTicket);
+
+// Inicializar al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
     vistaActual = 'recibidos';
     actualizarIndicador();
     BuscarTicketsHistorial();
 });
-
-// Eventos del datatable
-datatable.on('click', '.ver', mostrarDetalleTicket);

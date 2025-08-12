@@ -204,13 +204,13 @@ class TicketController extends ActiveRecord
                 }
 
                 // Configuración SFTP desde variables de entorno
-                $servidor_sftp = $_ENV['FILE_SERVER'] ?? 'ftp-1';
+                $servidor_sftp = $_ENV['FILE_SERVER'] ?? 'sftp_server';
                 $usuario_sftp = $_ENV['FILE_USER'] ?? 'ftpuser';
                 $password_sftp = $_ENV['FILE_PASSWORD'] ?? 'ftppassword';
                 $directorio_base = '/home/ftpuser/upload/images_ticket/'; // Usando la ruta del .env
 
                 // Conectar al servidor SFTP
-                $conexion_sftp = new SFTP('docker-ftp-1', 22);
+                $conexion_sftp = new SFTP('sftp_server', 22);
                 if (!$conexion_sftp->login('ftpuser', 'ftppassword')) {
                     http_response_code(500);
                     echo json_encode([
@@ -415,7 +415,7 @@ class TicketController extends ActiveRecord
             } else {
                 // Si falla la creación del ticket, eliminar imágenes del SFTP
                 if (!empty($nombres_imagenes_subidas)) {
-                    $conexion_sftp_limpieza = new SFTP('docker-ftp-1', 22);
+                    $conexion_sftp_limpieza = new SFTP('sftp_server', 22);
                     if ($conexion_sftp_limpieza->login('ftpuser', 'ftppassword')) {
                         self::eliminarArchivosSubidos($conexion_sftp_limpieza, $nombres_imagenes_subidas);
                         $conexion_sftp_limpieza->disconnect();
@@ -434,11 +434,11 @@ class TicketController extends ActiveRecord
             // Si falla, eliminar imágenes del SFTP
             if (isset($nombres_imagenes_subidas) && !empty($nombres_imagenes_subidas)) {
                 try {
-                    $servidor_sftp = $_ENV['FILE_SERVER'] ?? 'ftp-1';
+                    $servidor_sftp = $_ENV['FILE_SERVER'] ?? 'sftp_server';
                     $usuario_sftp = $_ENV['FILE_USER'] ?? 'ftpuser';
                     $password_sftp = $_ENV['FILE_PASSWORD'] ?? 'ftppassword';
                     
-                    $conexion_sftp_limpieza = new SFTP('docker-ftp-1', 22);
+                    $conexion_sftp_limpieza = new SFTP('sftp_server', 22);
                     if ($conexion_sftp_limpieza->login('ftpuser', 'ftppassword')) {
                         self::eliminarArchivosSubidos($conexion_sftp_limpieza, $nombres_imagenes_subidas);
                         $conexion_sftp_limpieza->disconnect();

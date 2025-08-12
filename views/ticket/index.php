@@ -289,9 +289,9 @@
                                 <label for="tic_telefono_mostrar" class="form-label">
                                     <i class="bi bi-telephone me-2"></i>Teléfono de Contacto
                                 </label>
-                                <input type="tel" class="form-control form-control-lg" id="tic_telefono_mostrar" 
-                                       placeholder="Número de teléfono" maxlength="20" 
-                                       value="<?= $datosUsuario[0]['oper_celular_personal'] ?>" readonly>
+                                <input type="tel" class="form-control form-control-lg" id="tic_telefono" 
+                                        name="tic_telefono" placeholder="12345678" maxlength="8" 
+                                        value="<?= $datosUsuario[0]['oper_celular_personal'] ?>" required>
                                 <div class="form-text">Teléfono registrado en el sistema</div>
                             </div>
                         </div>

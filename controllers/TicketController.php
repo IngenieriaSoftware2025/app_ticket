@@ -93,17 +93,25 @@ class TicketController extends ActiveRecord
             $datos_usuario = $datosUsuario[0];
 
             // Asignar teléfono automáticamente - USANDO CELULAR PERSONAL
-            $_POST['tic_telefono'] = $datos_usuario['oper_celular_personal'];
-            
-            if (empty($_POST['tic_telefono'])) {
-                http_response_code(400);
-                echo json_encode([
-                    'codigo' => 0,
-                    'mensaje' => 'El usuario no tiene teléfono registrado en el sistema'
-                ]);
-                exit;
-            }
+            $_POST['tic_telefono'] = filter_var($_POST['tic_telefono'], FILTER_SANITIZE_STRING);
 
+if (empty($_POST['tic_telefono'])) {
+    http_response_code(400);
+    echo json_encode([
+        'codigo' => 0,
+        'mensaje' => 'El teléfono es obligatorio'
+    ]);
+    exit;
+}
+
+if (!ctype_digit($_POST['tic_telefono']) || strlen($_POST['tic_telefono']) > 8) {
+    http_response_code(400);
+    echo json_encode([
+        'codigo' => 0,
+        'mensaje' => 'El teléfono debe tener máximo 8 números'
+    ]);
+    exit;
+}
             // Validar aplicación
             $_POST['tic_app'] = filter_var($_POST['tic_app'], FILTER_SANITIZE_NUMBER_INT);
             

@@ -20,16 +20,17 @@ if ($catalogoUsuario) {
             $nombreUsuario = trim($datosUsuario['per_nom1'] . ' ' . $datosUsuario['per_nom2'] . ' ' . $datosUsuario['per_ape1']);
             $rolUsuario = $datosUsuario['per_desc_empleo'] ?? 'No definido';
             $telefonoUsuario = $datosUsuario['per_telefono'] ?? 'No registrado';
+            // Intentar obtener el nombre real de la dependencia si existe
         }
-        
-        // Intentar obtener el nombre real de la dependencia si existe
-        if ($dependenciaUsuario != 999) {
-            $sqlDependencia = "SELECT dep_desc_lg FROM mdep WHERE dep_llave = $dependenciaUsuario";
+       
+       
+            $sqlDependencia = "SELECT dep_llave, dep_desc_md  from mper inner join morg on per_plaza = org_plaza  inner join mdep on org_dependencia = dep_llave and per_catalogo =   $catalogoUsuario";
             $datosDependencia = \Model\ActiveRecord::fetchFirst($sqlDependencia);
+  
             if ($datosDependencia) {
-                $nombreDependencia = $datosDependencia['dep_desc_lg'];
+                $nombreDependencia = $datosDependencia['dep_desc_md'];
             }
-        }
+        
     } catch (Exception $e) {
         // Los valores por defecto ya están asignados
     }

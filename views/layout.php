@@ -269,7 +269,7 @@ session_start();
                     <?= $_SESSION['usuario_rol'] ?? 'EMPLEADO' ?>
                 </div>
             </div>
-            <button onclick="logout()" class="btn btn-danger" style="margin: 0; width: 100%;"><i class="bi bi-arrow-bar-left"></i>Cerrar Sesión</button>
+            <button onclick="logout()" class="btn btn-danger" style="margin: 0; width: 100%;"><i class="bi bi-arrow-bar-left"></i>Regresar </button>
         </div>
     </div>
 

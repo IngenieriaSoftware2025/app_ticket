@@ -249,10 +249,17 @@ session_start();
             </li>
 
             <li class="nav-item">
+                <a class="nav-link px-3" href="/app_ticket/asignacion">
+                    <i class="bi bi-clock-fill me-2"></i>Asignación de Tickets
+                </a>
+            </li>
+
+            <li class="nav-item">
                 <a class="nav-link px-3" href="/app_ticket/historial">
                     <i class="bi bi-clock-fill me-2"></i>Historial Tickets
                 </a>
             </li>
+
 
             <li class="nav-item">
                 <a class="nav-link px-3" href="/app_ticket/estadisticas">

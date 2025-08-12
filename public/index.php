@@ -8,6 +8,7 @@ use Controllers\TicketController;
 use Controllers\EstadisticasController;
 use Controllers\EstadoTicketController;
 use Controllers\HistorialTicketsController;
+use Controllers\AsignacionTicketController;
 
 
 $router = new Router();
@@ -33,6 +34,12 @@ $router->post('/estado-tickets/rechazar', [EstadoTicketController::class, 'Recha
 $router->get('/estado-tickets/buscarTecnicosAPI', [EstadoTicketController::class, 'buscarTecnicosAPI']);
 $router->get('/estado-tickets/buscarEstadosAPI', [EstadoTicketController::class, 'buscarEstadosAPI']);
 $router->post('/estado-tickets/cambiarEstadoAPI', [EstadoTicketController::class, 'cambiarEstadoAPI']);
+
+//asignacion-tickets
+$router->get('/asignacion', [AsignacionTicketController::class, 'renderizarPagina']);
+$router->get('/asignacion/buscarAPI', [AsignacionTicketController::class, 'buscarAPI']);
+$router->get('/asignacion/buscarOficialesAPI', [AsignacionTicketController::class, 'buscarOficialesAPI']);
+$router->post('/asignacion/asignarAPI', [AsignacionTicketController::class, 'asignarAPI']);
 
 //historial-tickets
 $router->get('/historial', [HistorialTicketsController::class, 'renderizarPagina']);

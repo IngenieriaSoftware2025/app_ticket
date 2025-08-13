@@ -1,4 +1,7 @@
+import { Dropdown } from "bootstrap";
 import Swal from "sweetalert2";
+import { validarFormulario } from '../funciones';
+import { lenguaje } from "../lenguaje";
 
 const FormularioTicket = document.getElementById('formTicket');
 const BtnEnviar = document.getElementById('BtnEnviar');
@@ -507,7 +510,7 @@ const ConfigurarBusquedaAplicaciones = () => {
     });
 };
 
-// Funciones auxiliares para mostrar/ocultar dropdown
+// Funciones auxiliares para mostrar y ocultar dropdown
 const MostrarDropdown = () => {
     if (ContenedorAplicaciones) {
         ContenedorAplicaciones.classList.remove('hide');

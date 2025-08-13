@@ -13,7 +13,6 @@
     animation: fadeIn 0.3s ease-out;
 }
 
-/* Container del Modal */
 .modal-ticket-container {
     max-width: 800px;
     width: 90%;
@@ -22,7 +21,6 @@
     animation: slideDown 0.4s ease-out;
 }
 
-/* Card Principal del Modal */
 .modal-ticket-card {
     background: white;
     border-radius: 15px;
@@ -30,7 +28,6 @@
     overflow: hidden;
 }
 
-/* Header del Modal */
 .modal-ticket-header {
     background: linear-gradient(135deg, #2c5aa0, #1e3f73);
     color: white;
@@ -44,12 +41,10 @@
     font-weight: 600;
 }
 
-/* Contenido del Modal */
 .modal-ticket-content {
     padding: 30px;
 }
 
-/* Estilos corregidos para dropdown de aplicaciones */
 .dropdown-aplicaciones {
     position: relative !important;
     width: 100% !important;
@@ -73,16 +68,13 @@
     transform: none !important;
     inset: auto !important;
     float: none !important;
-    /* Estado inicial - oculto */
     display: none !important;
 }
 
-/* Mostrar el dropdown cuando tenga la clase 'show' */
 .dropdown-aplicaciones .dropdown-menu.show {
     display: block !important;
 }
 
-/* Ocultar el dropdown cuando tenga la clase 'hide' */
 .dropdown-aplicaciones .dropdown-menu.hide {
     display: none !important;
 }
@@ -127,13 +119,11 @@
     pointer-events: none !important;
 }
 
-/* Estilo para cuando el input tiene foco */
 .dropdown-aplicaciones input:focus {
     border-color: #86b7fe !important;
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
 }
 
-/* Scroll personalizado para el dropdown */
 .dropdown-aplicaciones .dropdown-menu::-webkit-scrollbar {
     width: 6px;
 }
@@ -152,15 +142,13 @@
     background: #a8a8a8;
 }
 
-/* Asegurar que el dropdown no sea afectado por otros estilos */
 .dropdown-aplicaciones .dropdown-menu * {
     box-sizing: border-box;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .dropdown-aplicaciones .dropdown-menu {
-        font-size: 16px !important; /* Evitar zoom en iOS */
+        font-size: 16px !important; 
     }
     
     .dropdown-aplicaciones .dropdown-item {
@@ -168,7 +156,6 @@
     }
 }
 
-/* Secciones de Información */
 .info-section {
     background: #f8fafc;
     border-radius: 10px;
@@ -198,7 +185,6 @@
     min-width: 80px;
 }
 
-/* Badge de Estado */
 .badge-estado {
     background: #28a745;
     color: white;
@@ -209,7 +195,6 @@
     text-transform: uppercase;
 }
 
-/* Sección de Descripción */
 .descripcion-section {
     background: #ffffff;
     border: 2px solid #e3f2fd;
@@ -228,7 +213,6 @@
     color: #1e3f73;
 }
 
-/* Sección de Imagen */
 .imagen-section {
     background: #ffffff;
     border: 2px solid #e3f2fd;
@@ -253,7 +237,6 @@
     box-shadow: 0 4px 15px rgba(44, 90, 160, 0.2);
 }
 
-/* Footer del Modal */
 .modal-ticket-footer {
     background: #f8fafc;
     padding: 20px;
@@ -261,7 +244,6 @@
     border-top: 1px solid #e3f2fd;
 }
 
-/* Botón Cerrar */
 .btn-cerrar-modal {
     background: linear-gradient(135deg, #6f42c1, #5a32a3);
     color: white;
@@ -280,7 +262,6 @@
     box-shadow: 0 8px 25px rgba(111, 66, 193, 0.4);
 }
 
-/* Animaciones */
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -297,7 +278,6 @@
     }
 }
 
-/* Responsive general */
 @media (max-width: 768px) {
     .modal-ticket-container {
         width: 95%;
@@ -523,7 +503,7 @@
                     </div>
                 </div>
 
-                <!-- Imágenes Adjuntas (si existen) -->
+                <!-- Imágenes Adjuntas -->
                 <div id="imagenSection" class="imagen-section" style="display: none;">
                     <h6 class="info-section-title">Imágenes Adjuntas</h6>
                     <div class="imagen-container" id="ticketImagenContainer">

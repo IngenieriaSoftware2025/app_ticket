@@ -8,7 +8,6 @@ use Controllers\TicketController;
 use Controllers\EstadisticasController;
 use Controllers\EstadoTicketController;
 use Controllers\HistorialTicketsController;
-use Controllers\AsignacionTicketController;
 use Controllers\EmailController;
 
 $router = new Router();
@@ -25,26 +24,23 @@ $router->get('/ticket', [TicketController::class,'index']);
 $router->post('/ticket/guardar', [TicketController::class,'guardarAPI']);
 $router->get('/ticket/aplicaciones', [TicketController::class, 'obtenerAplicacionesAPI']);
 
-//estado-tickets
+//estado-tickets (CONTROL DE TICKETS - Funcionalidad ampliada)
 $router->get('/estado-tickets', [EstadoTicketController::class, 'renderizarPagina']);
 $router->post('/estado-tickets/guardarAPI', [EstadoTicketController::class, 'guardarAPI']);
 $router->get('/estado-tickets/buscarAPI', [EstadoTicketController::class, 'buscarAPI']);
 $router->post('/estado-tickets/rechazar', [EstadoTicketController::class, 'RechazarAPI']);
+$router->post('/estado-tickets/revertir', [EstadoTicketController::class, 'revertirAPI']);
 $router->get('/estado-tickets/buscarTecnicosAPI', [EstadoTicketController::class, 'buscarTecnicosAPI']);
 $router->get('/estado-tickets/buscarEstadosAPI', [EstadoTicketController::class, 'buscarEstadosAPI']);
 $router->post('/estado-tickets/cambiarEstadoAPI', [EstadoTicketController::class, 'cambiarEstadoAPI']);
 
-//asignacion-tickets
-$router->get('/asignacion', [AsignacionTicketController::class, 'renderizarPagina']);
-$router->get('/asignacion/buscarAPI', [AsignacionTicketController::class, 'buscarAPI']);
-$router->get('/asignacion/buscarOficialesAPI', [AsignacionTicketController::class, 'buscarOficialesAPI']);
-$router->post('/asignacion/asignarAPI', [AsignacionTicketController::class, 'asignarAPI']);
+// NUEVAS RUTAS PARA ASIGNACIÓN INTEGRADA EN ESTADO-TICKETS
+$router->get('/estado-tickets/buscarOficialesAPI', [EstadoTicketController::class, 'buscarOficialesAPI']);
+$router->post('/estado-tickets/asignarAPI', [EstadoTicketController::class, 'asignarAPI']);
 
 //historial-tickets
 $router->get('/historial', [HistorialTicketsController::class, 'renderizarPagina']);
 $router->get('/historial/buscarAPI', [HistorialTicketsController::class, 'buscarAPI']);
-//$router->get('/historial/buscarCreadosAPI', [HistorialTicketsController::class, 'buscarCreadosAPI']);
-//$router->get('/historial/buscarFinalizadosAPI', [HistorialTicketsController::class, 'buscarFinalizadosAPI']);
 
 //estadisticas
 $router->get('/estadisticas', [EstadisticasController::class,'renderizarPagina']);
@@ -63,7 +59,7 @@ $router->get('/estadisticas/buscarTiempoRespuestaPorPrioridadAPI', [Estadisticas
 $router->get('/estadisticas/buscarSatisfaccionUsuarioAPI', [EstadisticasController::class, 'buscarSatisfaccionUsuarioAPI']);
 $router->get('/estadisticas/buscarTicketsReabiertosAPI', [EstadisticasController::class, 'buscarTicketsReabiertosAPI']);
 
-// RUTAS PARA SISTEMA DE CORREOS (NUEVAS)
+// RUTAS PARA SISTEMA DE CORREOS
 $router->post('/email/probar', [EmailController::class, 'probarConfiguracion']);
 
 $router->comprobarRutas();

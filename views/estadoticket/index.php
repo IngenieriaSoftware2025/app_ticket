@@ -8,7 +8,6 @@
                         <h3 class="fw-bold text-primary mb-0">CONTROL DE TICKETS</h3>
                     </div>
 
-                    <!-- Botones de Estado -->
                     <div class="text-center mb-4">
                         <button class="btn btn-primary btn-lg mx-2 estado-btn active" data-estado="1" id="btnRecibidos">
                             <i class="bi bi-plus-circle"></i> RECIBIDOS
@@ -21,7 +20,6 @@
                         </button>
                     </div>
 
-                    <!-- Filtros -->
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <label for="filtroFechaInicio" class="form-label">Fecha Inicio</label>
@@ -33,7 +31,6 @@
                         </div>
                     </div>
 
-                    <!-- Indicador del estado actual -->
                     <div class="alert alert-info text-center" id="indicadorEstado">
                         <i class="bi bi-info-circle"></i> <span id="textoIndicador">Mostrando tickets recibidos (en proceso)</span>
                     </div>
@@ -61,7 +58,6 @@
     </div>
 </div>
 
-<!-- Modal para ver detalles del ticket -->
 <div class="modal fade" id="modalDetalleTicket" tabindex="-1" aria-labelledby="modalDetalleTicketLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">

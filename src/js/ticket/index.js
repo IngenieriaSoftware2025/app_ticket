@@ -1,6 +1,5 @@
 import Swal from "sweetalert2";
 
-// Selección de elementos DOM
 const FormularioTicket = document.getElementById('formTicket');
 const BtnEnviar = document.getElementById('BtnEnviar');
 const BtnLimpiar = document.getElementById('BtnLimpiar');
@@ -14,7 +13,7 @@ const AreaTextoComentario = document.getElementById('tic_comentario_falla');
 // Variables globales
 let aplicaciones = [];
 
-// Función para cargar aplicaciones desde la API
+// Función para cargar aplicaciones
 const CargarAplicaciones = async () => {
     try {
         const nombreApp = window.location.pathname.split('/')[1];
@@ -119,7 +118,7 @@ const GuardarTicket = async (event) => {
     BtnEnviar.disabled = false;
 };
 
-// Función para mostrar el modal con detalles del ticket
+// Función para mostrar el modal de los detalles del ticket
 const MostrarModalTicket = (datosTicket) => {
     const modal = document.getElementById('modalTicket');
     const numeroTicket = document.getElementById('ticketNumero');

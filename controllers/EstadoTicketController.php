@@ -6,6 +6,8 @@ use Exception;
 use MVC\Router;
 use Model\ActiveRecord;
 use Model\TicketAsignado;
+use Controllers\EmailController;
+use Model\AsignacionTicket;
 
 class EstadoTicketController extends ActiveRecord
 {
@@ -18,7 +20,7 @@ class EstadoTicketController extends ActiveRecord
     public static function guardarAPI()
     {
         getHeadersApi();
-    
+
         try {
             $_POST['tic_numero_ticket'] = filter_var($_POST['tic_numero_ticket'], FILTER_SANITIZE_STRING);
             
@@ -54,17 +56,65 @@ class EstadoTicketController extends ActiveRecord
                 exit;
             }
 
-            // El estado siempre será 1 (RECIBIDO) para tickets nuevos
+            // OBTENER DATOS DEL TICKET Y TÉCNICO PARA EL CORREO
+            $sql_datos_correo = "SELECT 
+                                    ft.tic_correo_electronico,
+                                    ft.tic_comentario_falla,
+                                    mp_solicitante.per_nom1 || ' ' || mp_solicitante.per_nom2 || ' ' || mp_solicitante.per_ape1 AS solicitante_nombre
+                                FROM formulario_ticket ft
+                                INNER JOIN mper mp_solicitante ON ft.form_tic_usu = mp_solicitante.per_catalogo
+                                WHERE ft.form_tick_num = '{$_POST['tic_numero_ticket']}'";
+            
+            $datos_ticket = self::fetchFirst($sql_datos_correo);
+
+            $sql_tecnico = "SELECT per_nom1 || ' ' || per_ape1 as nombre FROM mper WHERE per_catalogo = {$_POST['tic_encargado']}";
+            $tecnico = self::fetchFirst($sql_tecnico);
+            $nombre_tecnico = $tecnico['nombre'] ?? 'Técnico Asignado';
+
+            // El estado siempre será en estado 1 (RECIBIDO) para tickets nuevos
             $_POST['estado_ticket'] = 1;
             
-            $ticketAsignado = new TicketAsignado($_POST);
+            $ticketAsignado = new AsignacionTicket($_POST);
             $resultado = $ticketAsignado->crear();
 
             if($resultado['resultado'] == 1){
+                // ENVIAR CORREO DE NOTIFICACIÓN DE ASIGNACIÓN
+                $correo_enviado = false;
+                try {
+                    // Preparar datos para el correo
+                    $datos_correo = [
+                        'numero' => $_POST['tic_numero_ticket'],
+                        'solicitante' => $datos_ticket['solicitante_nombre'] ?? 'Usuario',
+                        'descripcion' => $datos_ticket['tic_comentario_falla'] ?? '',
+                        'tecnico' => $nombre_tecnico
+                    ];
+                    
+                    // Enviar correo si tenemos el email del solicitante
+                    if ($datos_ticket && !empty($datos_ticket['tic_correo_electronico'])) {
+                        $resultado_correo = EmailController::enviarNotificacionTicket(
+                            'asignado',
+                            $datos_correo,
+                            $datos_ticket['tic_correo_electronico']
+                        );
+                        
+                        $correo_enviado = $resultado_correo['exito'] ?? false;
+                        
+                        // Log del resultado del correo
+                        if (!$correo_enviado) {
+                            error_log('Error al enviar correo de asignación: ' . ($resultado_correo['mensaje'] ?? 'Error desconocido'));
+                        }
+                    }
+                    
+                } catch (Exception $e) {
+                    // Si falla el correo, no afectar la asignación
+                    error_log('Error en sistema de correos: ' . $e->getMessage());
+                }
+                
                 http_response_code(200);
                 echo json_encode([
                     'codigo' => 1,
                     'mensaje' => 'Ticket asignado correctamente',
+                    'correo_enviado' => $correo_enviado
                 ]);
                 exit;
             } else {
@@ -215,14 +265,32 @@ class EstadoTicketController extends ActiveRecord
                 return;
             }
 
+            // OBTENER DATOS DEL TICKET PARA EL CORREO ANTES DE ACTUALIZAR
+            $sql_datos_correo = "SELECT 
+                                    ft.tic_correo_electronico,
+                                    ft.tic_comentario_falla,
+                                    mp_solicitante.per_nom1 || ' ' || mp_solicitante.per_nom2 || ' ' || mp_solicitante.per_ape1 AS solicitante_nombre
+                                FROM formulario_ticket ft
+                                INNER JOIN mper mp_solicitante ON ft.form_tic_usu = mp_solicitante.per_catalogo
+                                WHERE ft.form_tick_num = '{$ticket_numero}'";
+            
+            $datos_ticket = self::fetchFirst($sql_datos_correo);
+
             // Verificar si el ticket está asignado o es nuevo
-            $sql_check = "SELECT tic_id FROM tickets_asignados WHERE tic_numero_ticket = '{$ticket_numero}'";
+            $sql_check = "SELECT tic_id, tic_encargado FROM tickets_asignados WHERE tic_numero_ticket = '{$ticket_numero}'";
             $ticket_asignado = self::fetchFirst($sql_check);
 
+            $nombre_tecnico = 'Sistema';
             if ($ticket_asignado) {
                 // Actualizar ticket existente en tickets_asignados
                 $sql_update = "UPDATE tickets_asignados SET estado_ticket = {$siguiente_estado} WHERE tic_numero_ticket = '{$ticket_numero}'";
                 $resultado = self::SQL($sql_update);
+                
+                // Obtener nombre del técnico asignado
+                $sql_tecnico = "SELECT per_nom1 || ' ' || per_ape1 as nombre FROM mper WHERE per_catalogo = {$ticket_asignado['tic_encargado']}";
+                $tecnico = self::fetchFirst($sql_tecnico);
+                $nombre_tecnico = $tecnico['nombre'] ?? 'Técnico Asignado';
+                
             } else {
                 // Crear nuevo registro en tickets_asignados para tickets que están en RECIBIDO
                 if ($estado_actual == 1) { // RECIBIDO
@@ -256,11 +324,53 @@ class EstadoTicketController extends ActiveRecord
                 // Obtener nombre del nuevo estado
                 $sql_estado = "SELECT est_tic_desc FROM estado_ticket WHERE est_tic_id = {$siguiente_estado}";
                 $nuevo_estado = self::fetchFirst($sql_estado);
+                $descripcion_estado = $nuevo_estado['est_tic_desc'] ?? 'Nuevo Estado';
+                
+                // ENVIAR CORREO DE NOTIFICACIÓN
+                $correo_enviado = false;
+                try {
+                    // Mapear estados a tipos de notificación
+                    $tipos_notificacion = [
+                        2 => 'en_proceso',  // EN PROCESO
+                        3 => 'finalizado'   // FINALIZADO
+                    ];
+                    
+                    $tipo_notificacion = $tipos_notificacion[$siguiente_estado] ?? 'actualizado';
+                    
+                    // Preparar datos para el correo
+                    $datos_correo = [
+                        'numero' => $ticket_numero,
+                        'solicitante' => $datos_ticket['solicitante_nombre'] ?? 'Usuario',
+                        'descripcion' => $datos_ticket['tic_comentario_falla'] ?? '',
+                        'tecnico' => $nombre_tecnico
+                    ];
+                    
+                    // Enviar correo si tenemos el email del solicitante
+                    if ($datos_ticket && !empty($datos_ticket['tic_correo_electronico'])) {
+                        $resultado_correo = EmailController::enviarNotificacionTicket(
+                            $tipo_notificacion,
+                            $datos_correo,
+                            $datos_ticket['tic_correo_electronico']
+                        );
+                        
+                        $correo_enviado = $resultado_correo['exito'] ?? false;
+                        
+                        // Log del resultado del correo
+                        if (!$correo_enviado) {
+                            error_log('Error al enviar correo de cambio de estado: ' . ($resultado_correo['mensaje'] ?? 'Error desconocido'));
+                        }
+                    }
+                    
+                } catch (Exception $e) {
+                    // Si falla el correo, no afectar el cambio de estado
+                    error_log('Error en sistema de correos: ' . $e->getMessage());
+                }
                 
                 http_response_code(200);
                 echo json_encode([
                     'codigo' => 1,
-                    'mensaje' => 'Estado del ticket actualizado a: ' . ($nuevo_estado['est_tic_desc'] ?? 'Nuevo Estado')
+                    'mensaje' => 'Estado del ticket actualizado a: ' . $descripcion_estado,
+                    'correo_enviado' => $correo_enviado
                 ]);
             } else {
                 http_response_code(400);
@@ -307,6 +417,17 @@ class EstadoTicketController extends ActiveRecord
                 return;
             }
 
+            // OBTENER DATOS DEL TICKET PARA EL CORREO ANTES DE RECHAZAR
+            $sql_datos_correo = "SELECT 
+                                    ft.tic_correo_electronico,
+                                    ft.tic_comentario_falla,
+                                    mp_solicitante.per_nom1 || ' ' || mp_solicitante.per_nom2 || ' ' || mp_solicitante.per_ape1 AS solicitante_nombre
+                                FROM formulario_ticket ft
+                                INNER JOIN mper mp_solicitante ON ft.form_tic_usu = mp_solicitante.per_catalogo
+                                WHERE ft.form_tick_num = '{$ticket_numero}'";
+            
+            $datos_ticket = self::fetchFirst($sql_datos_correo);
+
             // Verificar que el ticket esté en estado RECIBIDO (1)
             $sql_check_estado = "SELECT ta.estado_ticket FROM tickets_asignados ta WHERE ta.tic_numero_ticket = '{$ticket_numero}'";
             $ticket_estado = self::fetchFirst($sql_check_estado);
@@ -329,10 +450,42 @@ class EstadoTicketController extends ActiveRecord
                 $sql_delete_asignado = "DELETE FROM tickets_asignados WHERE tic_numero_ticket = '{$ticket_numero}'";
                 self::SQL($sql_delete_asignado);
                 
+                // ENVIAR CORREO DE NOTIFICACIÓN DE RECHAZO
+                $correo_enviado = false;
+                try {
+                    // Preparar datos para el correo
+                    $datos_correo = [
+                        'numero' => $ticket_numero,
+                        'solicitante' => $datos_ticket['solicitante_nombre'] ?? 'Usuario',
+                        'descripcion' => $datos_ticket['tic_comentario_falla'] ?? ''
+                    ];
+                    
+                    // Enviar correo si tenemos el email del solicitante
+                    if ($datos_ticket && !empty($datos_ticket['tic_correo_electronico'])) {
+                        $resultado_correo = EmailController::enviarNotificacionTicket(
+                            'rechazado',
+                            $datos_correo,
+                            $datos_ticket['tic_correo_electronico']
+                        );
+                        
+                        $correo_enviado = $resultado_correo['exito'] ?? false;
+                        
+                        // Log del resultado del correo
+                        if (!$correo_enviado) {
+                            error_log('Error al enviar correo de rechazo: ' . ($resultado_correo['mensaje'] ?? 'Error desconocido'));
+                        }
+                    }
+                    
+                } catch (Exception $e) {
+                    // Si falla el correo, no afectar el rechazo
+                    error_log('Error en sistema de correos: ' . $e->getMessage());
+                }
+                
                 http_response_code(200);
                 echo json_encode([
                     'codigo' => 1,
-                    'mensaje' => 'El ticket ha sido rechazado correctamente'
+                    'mensaje' => 'El ticket ha sido rechazado correctamente',
+                    'correo_enviado' => $correo_enviado
                 ]);
             } else {
                 http_response_code(400);

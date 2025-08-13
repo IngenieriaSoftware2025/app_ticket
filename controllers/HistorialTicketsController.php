@@ -52,7 +52,7 @@ class HistorialTicketsController extends ActiveRecord
 
             // Agregar filtros de fecha 
             if (!empty($fechaInicio) && self::validarFecha($fechaInicio)) {
-                // Para Informix DATETIME YEAR TO SECOND: 'YYYY-MM-DD HH:MM:SS'
+                // Para DATETIME YEAR TO SECOND: 'YYYY-MM-DD HH:MM:SS'
                 $condiciones[] = "ft.form_fecha_creacion >= '{$fechaInicio} 00:00:00'";
             }
             

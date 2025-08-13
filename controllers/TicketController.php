@@ -7,6 +7,7 @@ use MVC\Router;
 use Model\ActiveRecord;
 use Model\FormularioTicket;
 use phpseclib3\Net\SFTP;
+use Controllers\EmailController;
 
 class TicketController extends ActiveRecord
 {
@@ -16,10 +17,10 @@ class TicketController extends ActiveRecord
         error_reporting(E_ALL);
         ini_set('display_errors', 1);
         $catalogo = $_SESSION['auth_user'];
-
+        // Consulta de aplicaciones 
         $aplicaciones = ActiveRecord::fetcharray("SELECT * from grupo_menuautocom where gma_situacion = 1");
         
-        // CONSULTA ACTUALIZADA
+        // Consulta de todos los datos del usuario
         $datosUsuario = ActiveRecord::fetcharray("SELECT mp.per_catalogo, 
                                         trim(mp.per_nom1)||  ' ' || trim(mp.per_nom2)|| ' ' || trim(mp.per_ape1) as nombre, 
                                         mp.per_desc_empleo, md.dep_llave, md.dep_desc_md, 
@@ -71,7 +72,7 @@ class TicketController extends ActiveRecord
                 exit;
             }
 
-            // CONSULTA ACTUALIZADA - IDÉNTICA A index()
+            // Consulta de los datos del usuario
             $datosUsuario = ActiveRecord::fetcharray("SELECT mp.per_catalogo, 
                                         trim(mp.per_nom1)||  ' ' || trim(mp.per_nom2)|| ' ' || trim(mp.per_ape1) as nombre, 
                                         mp.per_desc_empleo, md.dep_llave, md.dep_desc_md, 
@@ -95,8 +96,8 @@ class TicketController extends ActiveRecord
             // Usar el primer elemento del array
             $datos_usuario = $datosUsuario[0];
 
-            // Asignar teléfono automáticamente - USANDO CELULAR PERSONAL
-            $_POST['tic_telefono'] = filter_var($_POST['tic_telefono'], FILTER_SANITIZE_STRING);
+            // Asignar teléfono automáticamente, segun telefono de la tala mper_otros
+            $_POST['tic_telefono'] = filter_var($_POST['tic_telefono'], FILTER_SANITIZE_NUMBER_INT);
 
             if (empty($_POST['tic_telefono'])) {
                 http_response_code(400);
@@ -128,7 +129,7 @@ class TicketController extends ActiveRecord
                 exit;
             }
 
-            // USAR LA MISMA CONSULTA DE aplicaciones - AHORRAR LÍNEAS
+            // Consulta de aplicaciones
             $aplicaciones = ActiveRecord::fetcharray("SELECT * from grupo_menuautocom where gma_situacion = 1");
             $aplicacion_valida = null;
             
@@ -161,11 +162,11 @@ class TicketController extends ActiveRecord
                 exit;
             }
 
-            if (strlen($_POST['tic_correo_electronico']) > 100) {
+            if (strlen($_POST['tic_correo_electronico']) > 30) {
                 http_response_code(400);
                 echo json_encode([
                     'codigo' => 0,
-                    'mensaje' => 'El correo electrónico no puede exceder 100 caracteres'
+                    'mensaje' => 'El correo electrónico no puede exceder 30 caracteres'
                 ]);
                 exit;
             }
@@ -219,7 +220,7 @@ class TicketController extends ActiveRecord
                 $servidor_sftp = $_ENV['FILE_SERVER'] ?? 'ftp-1';
                 $usuario_sftp = $_ENV['FILE_USER'] ?? 'ftpuser';
                 $password_sftp = $_ENV['FILE_PASSWORD'] ?? 'ftppassword';
-                $directorio_base = '/home/ftpuser/upload/images_ticket/'; // Usando la ruta del .env
+                $directorio_base = '/home/ftpuser/upload/images_ticket/'; 
 
                 // Conectar al servidor SFTP
                 $conexion_sftp = new SFTP('docker-ftp-1', 22);
@@ -240,7 +241,7 @@ class TicketController extends ActiveRecord
                     '/upload/'
                 ];
                 
-                $carpeta_base = '/home/ftpuser/upload/'; // Por defecto
+                $carpeta_base = '/home/ftpuser/upload/'; // Carpeta de la imagen del Docker
                 
                 foreach ($rutas_posibles as $ruta) {
                     if ($conexion_sftp->is_dir($ruta)) {
@@ -249,7 +250,7 @@ class TicketController extends ActiveRecord
                     }
                 }
                 
-                // Crear estructura: carpeta_base/tickets/YYYY/nombre_del_ticket/
+                // Crear estructura: carpeta_base/tickets/año/nombre_del_ticket/
                 $año = date('Y');
                 $numero_ticket = $_POST['form_tick_num'];
                 
@@ -281,7 +282,7 @@ class TicketController extends ActiveRecord
                         $archivo_temporal = $_FILES['tic_imagen']['tmp_name'][$i];
                         $tamaño_archivo = $_FILES['tic_imagen']['size'][$i];
 
-                        // Validar extensión (Para cargar las imagenes)
+                        // Validar extensión (Para subir las imagenes)
                         $extension_archivo = strtolower(pathinfo($nombre_archivo, PATHINFO_EXTENSION));
                         $extensiones_permitidas = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff'];
 
@@ -407,6 +408,35 @@ class TicketController extends ActiveRecord
             $resultado = $ticket->crear();
 
             if($resultado['resultado'] == 1){
+                // ENVIAR CORREO DE NOTIFICACIÓN
+                $correo_enviado = false;
+                try {
+                    // Preparar datos para el correo
+                    $datos_correo = [
+                        'numero' => $_POST['form_tick_num'],
+                        'solicitante' => $datos_usuario['nombre'],
+                        'descripcion' => $_POST['tic_comentario_falla']
+                    ];
+                    
+                    // Enviar correo al solicitante
+                    $resultado_correo = EmailController::enviarNotificacionTicket(
+                        'creado',
+                        $datos_correo,
+                        $_POST['tic_correo_electronico']
+                    );
+                    
+                    $correo_enviado = $resultado_correo['exito'] ?? false;
+                    
+                    // Log del resultado del correo
+                    if (!$correo_enviado) {
+                        error_log('Error al enviar correo de ticket creado: ' . ($resultado_correo['mensaje'] ?? 'Error desconocido'));
+                    }
+                    
+                } catch (Exception $e) {
+                    // Si falla el correo, no afectar la creación del ticket
+                    error_log('Error en sistema de correos: ' . $e->getMessage());
+                }
+                
                 http_response_code(200);
                 echo json_encode([
                     'codigo' => 1,
@@ -420,7 +450,8 @@ class TicketController extends ActiveRecord
                         'aplicacion_seleccionada' => $aplicacion_valida['gma_desc'],
                         'dependencia_usuario' => $datos_usuario['dep_desc_md'], 
                         'imagenes_subidas' => count($rutas_imagenes),
-                        'rutas_sftp' => $rutas_imagenes
+                        'rutas_sftp' => $rutas_imagenes,
+                        'correo_enviado' => $correo_enviado
                     ]
                 ]);
                 exit;

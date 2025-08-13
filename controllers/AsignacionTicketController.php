@@ -5,6 +5,7 @@ namespace Controllers;
 use Exception;
 use MVC\Router;
 use Model\ActiveRecord;
+use Controllers\EmailController;
 
 class AsignacionTicketController extends ActiveRecord
 {
@@ -61,7 +62,7 @@ class AsignacionTicketController extends ActiveRecord
     public static function buscarOficialesAPI()
     {
         try {
-            // Consulta SIMPLIFICADA para obtener oficiales disponibles
+            // Consulta para obtener oficiales disponibles
             $sql = "SELECT 
                         mp.per_catalogo,
                         mp.per_nom1,
@@ -115,6 +116,22 @@ class AsignacionTicketController extends ActiveRecord
                 return;
             }
 
+            // OBTENER DATOS DEL TICKET PARA EL CORREO ANTES DE ASIGNAR
+            $sql_datos_correo = "SELECT 
+                                    ft.tic_correo_electronico,
+                                    ft.tic_comentario_falla,
+                                    mp_solicitante.per_nom1 || ' ' || mp_solicitante.per_nom2 || ' ' || mp_solicitante.per_ape1 AS solicitante_nombre
+                                FROM formulario_ticket ft
+                                INNER JOIN mper mp_solicitante ON ft.form_tic_usu = mp_solicitante.per_catalogo
+                                WHERE ft.form_tick_num = '{$ticket_numero}'";
+            
+            $datos_ticket = self::fetchFirst($sql_datos_correo);
+
+            // Obtener datos del oficial asignado
+            $sql_oficial_nombre = "SELECT per_nom1 || ' ' || per_ape1 as nombre FROM mper WHERE per_catalogo = '{$oficial_id}'";
+            $oficial = self::fetchFirst($sql_oficial_nombre);
+            $nombre_oficial = $oficial['nombre'] ?? 'Oficial Asignado';
+
             // Verificar que el ticket existe en formulario_ticket y no está asignado
             $sql_verificar = "SELECT form_tick_num 
                              FROM formulario_ticket 
@@ -138,8 +155,8 @@ class AsignacionTicketController extends ActiveRecord
             }
 
             // Verificar que el oficial existe y está activo
-            $sql_oficial = "SELECT per_catalogo FROM mper WHERE per_catalogo = '$oficial_id' AND per_situacion = 1";
-            $oficial_existente = self::fetchFirst($sql_oficial);
+            $sql_oficial_check = "SELECT per_catalogo FROM mper WHERE per_catalogo = '$oficial_id' AND per_situacion = 1";
+            $oficial_existente = self::fetchFirst($sql_oficial_check);
 
             if (!$oficial_existente) {
                 http_response_code(400);
@@ -157,11 +174,45 @@ class AsignacionTicketController extends ActiveRecord
             $resultado = self::SQL($sql_asignar);
 
             if ($resultado) {
+                // ENVIAR CORREO DE NOTIFICACIÓN DE ASIGNACIÓN
+                $correo_enviado = false;
+                try {
+                    // Preparar datos para el correo
+                    $datos_correo = [
+                        'numero' => $ticket_numero,
+                        'solicitante' => $datos_ticket['solicitante_nombre'] ?? 'Usuario',
+                        'descripcion' => $datos_ticket['tic_comentario_falla'] ?? '',
+                        'tecnico' => $nombre_oficial
+                    ];
+                    
+                    // Enviar correo si tenemos el email del solicitante
+                    if ($datos_ticket && !empty($datos_ticket['tic_correo_electronico'])) {
+                        $resultado_correo = EmailController::enviarNotificacionTicket(
+                            'asignado',
+                            $datos_correo,
+                            $datos_ticket['tic_correo_electronico']
+                        );
+                        
+                        $correo_enviado = $resultado_correo['exito'] ?? false;
+                        
+                        // Log del resultado del correo
+                        if (!$correo_enviado) {
+                            error_log('Error al enviar correo de asignación: ' . ($resultado_correo['mensaje'] ?? 'Error desconocido'));
+                        }
+                    }
+                    
+                } catch (Exception $e) {
+                    // Si falla el correo, no afectar la asignación
+                    error_log('Error en sistema de correos: ' . $e->getMessage());
+                }
+
                 http_response_code(200);
                 echo json_encode([
                     'codigo' => 1,
                     'mensaje' => 'Ticket asignado correctamente',
-                    'ticket_numero' => $ticket_numero
+                    'ticket_numero' => $ticket_numero,
+                    'oficial_asignado' => $nombre_oficial,
+                    'correo_enviado' => $correo_enviado
                 ]);
             } else {
                 http_response_code(400);

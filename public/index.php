@@ -9,7 +9,7 @@ use Controllers\EstadisticasController;
 use Controllers\EstadoTicketController;
 use Controllers\HistorialTicketsController;
 use Controllers\AsignacionTicketController;
-
+use Controllers\EmailController;
 
 $router = new Router();
 $router->setBaseURL('/' . $_ENV['APP_NAME']);
@@ -24,7 +24,6 @@ $router->get('/mis-tickets', [EstadoTicketController::class,'renderizarPagina'])
 $router->get('/ticket', [TicketController::class,'index']);
 $router->post('/ticket/guardar', [TicketController::class,'guardarAPI']); // ORIGINAL
 $router->get('/ticket/aplicaciones', [TicketController::class, 'obtenerAplicacionesAPI']); // ORIGINAL
-
 
 //estado-tickets
 $router->get('/estado-tickets', [EstadoTicketController::class, 'renderizarPagina']);
@@ -64,8 +63,7 @@ $router->get('/estadisticas/buscarTiempoRespuestaPorPrioridadAPI', [Estadisticas
 $router->get('/estadisticas/buscarSatisfaccionUsuarioAPI', [EstadisticasController::class, 'buscarSatisfaccionUsuarioAPI']);
 $router->get('/estadisticas/buscarTicketsReabiertosAPI', [EstadisticasController::class, 'buscarTicketsReabiertosAPI']);
 
-
-
-
+// RUTAS PARA SISTEMA DE CORREOS (NUEVAS)
+$router->post('/email/probar', [EmailController::class, 'probarConfiguracion']);
 
 $router->comprobarRutas();

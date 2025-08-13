@@ -70,8 +70,8 @@
     </div>
 </div>
 
-<!-- Modal para ver detalles del ticket -->
-<div class="modal fade" id="modalDetalleTicket" tabindex="-1" aria-labelledby="modalDetalleTicketLabel" aria-hidden="true">
+<!-- Modal para ver detalles del ticket - CORREGIDO COMPLETAMENTE -->
+<div class="modal fade" id="modalDetalleTicket" tabindex="-1" aria-labelledby="modalDetalleTicketLabel" aria-hidden="true" style="display: none;">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
@@ -82,22 +82,22 @@
                 <div class="row">
                     <div class="col-md-6">
                         <h6 class="fw-bold text-primary">Información del Ticket</h6>
-                        <p><strong>Número:</strong> <span id="detalleNumero"></span></p>
-                        <p><strong>Estado:</strong> <span id="detalleEstado"></span></p>
-                        <p><strong>Fecha Creación:</strong> <span id="detalleFecha"></span></p>
+                        <p><strong>Número:</strong> <span id="detalleNumero">-</span></p>
+                        <p><strong>Estado:</strong> <span id="detalleEstado">-</span></p>
+                        <p><strong>Fecha Creación:</strong> <span id="detalleFecha">-</span></p>
                     </div>
                     <div class="col-md-6">
                         <h6 class="fw-bold text-primary">Información del Solicitante</h6>
-                        <p><strong>Nombre:</strong> <span id="detalleSolicitante"></span></p>
-                        <p><strong>Email:</strong> <span id="detalleEmail"></span></p>
-                        <p><strong>Dependencia:</strong> <span id="detalleDependencia"></span></p>
+                        <p><strong>Nombre:</strong> <span id="detalleSolicitante">-</span></p>
+                        <p><strong>Email:</strong> <span id="detalleEmail">-</span></p>
+                        <p><strong>Dependencia:</strong> <span id="detalleDependencia">-</span></p>
                     </div>
                 </div>
                 <div class="row mt-3">
                     <div class="col-12">
                         <h6 class="fw-bold text-primary">Descripción del Problema</h6>
                         <div class="bg-light p-3 rounded">
-                            <p id="detalleDescripcion"></p>
+                            <p id="detalleDescripcion">Cargando...</p>
                         </div>
                     </div>
                 </div>

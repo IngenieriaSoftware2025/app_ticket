@@ -22,14 +22,14 @@ $router->get('/mis-tickets', [EstadoTicketController::class,'renderizarPagina'])
 
 // Rutas para tickets
 $router->get('/ticket', [TicketController::class,'index']);
-$router->post('/ticket/guardar', [TicketController::class,'guardarAPI']); // ORIGINAL
-$router->get('/ticket/aplicaciones', [TicketController::class, 'obtenerAplicacionesAPI']); // ORIGINAL
+$router->post('/ticket/guardar', [TicketController::class,'guardarAPI']);
+$router->get('/ticket/aplicaciones', [TicketController::class, 'obtenerAplicacionesAPI']);
 
 //estado-tickets
 $router->get('/estado-tickets', [EstadoTicketController::class, 'renderizarPagina']);
 $router->post('/estado-tickets/guardarAPI', [EstadoTicketController::class, 'guardarAPI']);
 $router->get('/estado-tickets/buscarAPI', [EstadoTicketController::class, 'buscarAPI']);
-$router->post('/estado-tickets/rechazar', [EstadoTicketController::class, 'RechazarAPI']); // Cambiado de eliminar a rechazar
+$router->post('/estado-tickets/rechazar', [EstadoTicketController::class, 'RechazarAPI']);
 $router->get('/estado-tickets/buscarTecnicosAPI', [EstadoTicketController::class, 'buscarTecnicosAPI']);
 $router->get('/estado-tickets/buscarEstadosAPI', [EstadoTicketController::class, 'buscarEstadosAPI']);
 $router->post('/estado-tickets/cambiarEstadoAPI', [EstadoTicketController::class, 'cambiarEstadoAPI']);

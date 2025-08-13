@@ -23,7 +23,7 @@ class AsignacionTicket extends ActiveRecord {
         $this->tic_id = $argumentos['tic_id'] ?? null;
         $this->tic_numero_ticket = $argumentos['tic_numero_ticket'] ?? '';
         $this->tic_encargado = $argumentos['tic_encargado'] ?? 0;
-        $this->estado_ticket = $argumentos['estado_ticket'] ?? 1; // Por defecto RECIBIDO
+        $this->estado_ticket = $argumentos['estado_ticket'] ?? 1; 
         $this->tic_situacion = $argumentos['tic_situacion'] ?? 1;
     }
 

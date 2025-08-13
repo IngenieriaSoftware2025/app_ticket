@@ -22,7 +22,6 @@ const BuscarTicketsAsignacion = async () => {
         if (codigo == 1) {
             console.log('Tickets pendientes de asignación encontrados:', data);
             
-            // DEBUG: Ver estructura de cada ticket
             if (data.length > 0) {
                 console.log('Primer ticket estructura:', data[0]);
                 console.log('Campo tic_comentario_falla:', data[0].tic_comentario_falla);
@@ -33,7 +32,6 @@ const BuscarTicketsAsignacion = async () => {
                 datatable.rows.add(data).draw();
             }
 
-            // Actualizar indicador
             actualizarIndicador(data.length);
         } else {
             await Swal.fire({
@@ -107,7 +105,6 @@ const AsignarTicket = async (ticketNumero, oficialId) => {
                 showConfirmButton: true,
             });
             
-            // Recargar la tabla
             await BuscarTicketsAsignacion();
         } else {
             await Swal.fire({
@@ -247,7 +244,6 @@ const mostrarDetalleTicket = (event) => {
     const imagenContainer = document.getElementById('detalleImagenContainer');
     const imagen = document.getElementById('detalleImagen');
     
-    // Manejar la imagen de forma segura
     if (ticket.tic_imagen && ticket.tic_imagen.trim() !== '' && ticket.tic_imagen !== 'null') {
         try {
             imagen.src = `/${ticket.tic_imagen}`;
@@ -289,32 +285,25 @@ const manejarAsignacion = (event) => {
         return;
     }
     
-    // Mostrar modal de confirmación
     document.getElementById('confirmTicketNumero').textContent = ticketNumero;
     document.getElementById('confirmOficialNombre').textContent = 
         `${oficialSeleccionado.per_grado || ''} ${oficialSeleccionado.per_nom1} ${oficialSeleccionado.per_ape1 || ''}`;
     
-    // Configurar el botón de confirmación
     const btnConfirmar = document.getElementById('btnConfirmarAsignacion');
     btnConfirmar.onclick = async () => {
-        // Cerrar modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarAsignacion'));
         modal.hide();
         
-        // Procesar asignación
         await AsignarTicket(ticketNumero, oficialId);
     };
     
-    // Mostrar modal
     const modalConfirmar = new bootstrap.Modal(document.getElementById('modalConfirmarAsignacion'));
     modalConfirmar.show();
 }
 
-// Cargar datos al iniciar
 document.addEventListener('DOMContentLoaded', async function() {
     await BuscarOficiales();
     await BuscarTicketsAsignacion();
 });
 
-// Eventos del datatable
 datatable.on('click', '.asignar', manejarAsignacion);

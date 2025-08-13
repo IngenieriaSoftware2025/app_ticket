@@ -130,7 +130,6 @@ const mostrarDetalleTicket = (ticket) => {
         console.log('Descripción del ticket:', ticket.tic_comentario_falla);
         console.log('Objeto ticket completo:', ticket);
         
-        // Manejo mejorado de la descripción sin cambiar la consulta SQL
         let descripcion = 'No se ha proporcionado una descripción para este ticket';
         
         if (ticket.tic_comentario_falla) {
@@ -147,22 +146,21 @@ const mostrarDetalleTicket = (ticket) => {
         
         console.log('Ruta de imagen en ticket:', ticket.tic_imagen);
         
-        // Manejo mejorado de imágenes - verificar si realmente existe
         if (ticket.tic_imagen) {
             const imgPath = ticket.tic_imagen.toString().trim();
             
             if (imgPath !== '' && imgPath !== 'null' && imgPath !== 'undefined') {
                 try {
-                    // Probar múltiples rutas basadas en tu estructura
+                    
                     const rutasPosibles = [
-                        `/uploads/tickets/2025/${imgPath}`, // Nueva ruta específica
-                        `/public/uploads/tickets/2025/${imgPath}`, // Nueva ruta específica
-                        `/app_ticket/uploads/tickets/2025/${imgPath}`, // Nueva ruta específica
+                        `/uploads/tickets/2025/${imgPath}`, 
+                        `/public/uploads/tickets/2025/${imgPath}`, 
+                        `/app_ticket/uploads/tickets/2025/${imgPath}`,
                         `/uploads/${imgPath}`,
                         `/public/uploads/${imgPath}`,
                         `/app_ticket/uploads/${imgPath}`,
                         `/app_ticket/public/uploads/${imgPath}`,
-                        `/${imgPath}` // En caso de que venga la ruta completa
+                        `/${imgPath}` 
                     ];
                     
                     let rutaActual = 0;

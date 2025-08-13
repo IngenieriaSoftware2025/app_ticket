@@ -50,9 +50,9 @@ class HistorialTicketsController extends ActiveRecord
                 $condiciones[] = "ft.form_estado = " . self::ESTADO_ACTIVO;
             }
 
-            // Agregar filtros de fecha CORREGIDOS para Informix
+            // Agregar filtros de fecha 
             if (!empty($fechaInicio) && self::validarFecha($fechaInicio)) {
-                // Para Informix DATETIME YEAR TO SECOND: 'YYYY-MM-DD HH:MM:SS'
+                // Para DATETIME YEAR TO SECOND: 'YYYY-MM-DD HH:MM:SS'
                 $condiciones[] = "ft.form_fecha_creacion >= '{$fechaInicio} 00:00:00'";
             }
             
@@ -62,7 +62,7 @@ class HistorialTicketsController extends ActiveRecord
 
             $where = implode(" AND ", $condiciones);
             
-            // Consulta principal CORREGIDA para manejar NULLs en Informix
+            // Consulta principal 
             $sql = "SELECT ft.form_tick_num, 
                            ft.tic_comentario_falla, 
                            ft.tic_correo_electronico, 
@@ -81,7 +81,7 @@ class HistorialTicketsController extends ActiveRecord
                     WHERE $where 
                     ORDER BY ft.form_fecha_creacion DESC";
                     
-            error_log("SQL Query: " . $sql); // Para debugging
+            error_log("SQL Query: " . $sql);
             
             $tickets = self::fetchArray($sql);
             
@@ -214,7 +214,6 @@ class HistorialTicketsController extends ActiveRecord
                 return $estadoTicket >= 1 && $estadoTicket <= 2;
                 
             case self::TIPO_FINALIZADOS:
-                // Estado 3 es finalizado (según tu comentario: 3-Resuelto)
                 return $estadoTicket === 3;
                 
             default:
@@ -222,10 +221,8 @@ class HistorialTicketsController extends ActiveRecord
         }
     }
 
-    // Método auxiliar para escapar strings (si no existe en ActiveRecord)
     private static function escaparString($string)
     {
-        // Implementar según tu método de conexión
         return addslashes($string);
     }
 }

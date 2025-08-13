@@ -8,7 +8,6 @@
                         <h3 class="fw-bold text-primary mb-0">ASIGNACIÓN DE TICKETS</h3>
                     </div>
 
-                    <!-- Indicador de vista actual -->
                     <div class="row mb-3">
                         <div class="col-12">
                             <div class="alert alert-info text-center" id="indicadorVista">
@@ -41,7 +40,6 @@
     </div>
 </div>
 
-<!-- Modal para ver detalles del ticket -->
 <div class="modal fade" id="modalDetalleTicket" tabindex="-1" aria-labelledby="modalDetalleTicketLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -86,7 +84,6 @@
     </div>
 </div>
 
-<!-- Modal de confirmación de asignación -->
 <div class="modal fade" id="modalConfirmarAsignacion" tabindex="-1" aria-labelledby="modalConfirmarAsignacionLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">

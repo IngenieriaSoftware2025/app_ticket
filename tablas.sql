@@ -1,7 +1,7 @@
 --Tablas provisionales para la app_ticket
 
 CREATE TABLE formulario_ticket (
-    form_tick_num VARCHAR(250) PRIMARY KEY,
+    form_tick_num VARCHAR(250) PRIMARY KEY, --Colocarle Unique
     form_tic_usu INT NOT NULL, --Catalogo de la persona que esta teniendo el problema
     tic_dependencia SMALLINT NOT NULL,--Dependencia
     tic_telefono INT NOT NULL, --Telefono de la persona que esta teniendo el problema

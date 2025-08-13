@@ -14,8 +14,7 @@ class TicketController extends ActiveRecord
     public static function index(Router $router)
     {
 
-        error_reporting(E_ALL);
-        ini_set('display_errors', 1);
+ 
         $catalogo = $_SESSION['auth_user'];
         // Consulta de aplicaciones 
         $aplicaciones = ActiveRecord::fetcharray("SELECT * from grupo_menuautocom where gma_situacion = 1");

@@ -12,6 +12,9 @@ class TicketController extends ActiveRecord
 {
     public static function index(Router $router)
     {
+
+        error_reporting(E_ALL);
+        ini_set('display_errors', 1);
         $catalogo = $_SESSION['auth_user'];
 
         $aplicaciones = ActiveRecord::fetcharray("SELECT * from grupo_menuautocom where gma_situacion = 1");
@@ -95,23 +98,24 @@ class TicketController extends ActiveRecord
             // Asignar teléfono automáticamente - USANDO CELULAR PERSONAL
             $_POST['tic_telefono'] = filter_var($_POST['tic_telefono'], FILTER_SANITIZE_STRING);
 
-if (empty($_POST['tic_telefono'])) {
-    http_response_code(400);
-    echo json_encode([
-        'codigo' => 0,
-        'mensaje' => 'El teléfono es obligatorio'
-    ]);
-    exit;
-}
+            if (empty($_POST['tic_telefono'])) {
+                http_response_code(400);
+                echo json_encode([
+                    'codigo' => 0,
+                    'mensaje' => 'El teléfono es obligatorio'
+                ]);
+                exit;
+            }
 
-if (!ctype_digit($_POST['tic_telefono']) || strlen($_POST['tic_telefono']) > 8) {
-    http_response_code(400);
-    echo json_encode([
-        'codigo' => 0,
-        'mensaje' => 'El teléfono debe tener máximo 8 números'
-    ]);
-    exit;
-}
+            if (!is_numeric($_POST['tic_telefono']) || strlen($_POST['tic_telefono']) != 8) {
+                http_response_code(400);
+                echo json_encode([
+                    'codigo' => 0,
+                    'mensaje' => 'El teléfono debe tener exactamente 8 números'
+                ]);
+                exit;
+            }
+
             // Validar aplicación
             $_POST['tic_app'] = filter_var($_POST['tic_app'], FILTER_SANITIZE_NUMBER_INT);
             
@@ -480,7 +484,6 @@ if (!ctype_digit($_POST['tic_telefono']) || strlen($_POST['tic_telefono']) > 8) 
                     $conexion_sftp->delete($ruta_archivo);
                 }
             } catch (Exception $excepcion) {
-                // Log del error si es necesario
                 error_log('Error al eliminar archivo SFTP: ' . $ruta_archivo . ' - ' . $excepcion->getMessage());
             }
         }
@@ -491,7 +494,6 @@ if (!ctype_digit($_POST['tic_telefono']) || strlen($_POST['tic_telefono']) > 8) 
         getHeadersApi();
         
         try {
-            // USAR LA MISMA CONSULTA DE index() - AHORRAR LÍNEAS
             $aplicaciones = ActiveRecord::fetcharray("SELECT * from grupo_menuautocom where gma_situacion = 1");
             
             if (empty($aplicaciones)) {

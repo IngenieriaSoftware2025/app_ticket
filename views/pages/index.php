@@ -1,9 +1,3 @@
-<?php
-session_start();
-// $isAdmin = ($_SESSION['usuario_rol'] ?? 'EMPLEADO') === 'ADMIN';
-$userName = $_SESSION['user'] ?? 'Usuario';
-// $userRole = $_SESSION['usuario_rol'] ?? 'EMPLEADO';
-?>
 <style>
     body {
         background: #f8fbff;

@@ -17,13 +17,13 @@ $router->setBaseURL('/' . $_ENV['APP_NAME']);
 // Ruta principal
 $router->get('/', [AppController::class,'index']);
 
-//ruta para mis tickets - CORREGIDA
+//ruta para mis tickets
 $router->get('/mis-tickets', [EstadoTicketController::class,'renderizarPagina']);
 
 // Rutas para tickets
-$router->get('/ticket', [TicketController::class,'renderizarPagina']);
-$router->post('/ticket/guardar', [TicketController::class,'guardarAPI']);
-$router->get('/ticket/aplicaciones', [TicketController::class, 'obtenerAplicacionesAPI']);
+$router->get('/ticket', [TicketController::class,'index']);
+$router->post('/ticket/guardar', [TicketController::class,'guardarAPI']); // ORIGINAL
+$router->get('/ticket/aplicaciones', [TicketController::class, 'obtenerAplicacionesAPI']); // ORIGINAL
 
 
 //estado-tickets

@@ -1,10 +1,4 @@
-<?php
-// Sin cambios - igual que tu código original
-?>
-
-<!-- Estilos CSS para el Modal -->
 <style>
-/* Overlay del Modal */
 .modal-ticket-overlay {
     position: fixed;
     top: 0;
@@ -53,6 +47,125 @@
 /* Contenido del Modal */
 .modal-ticket-content {
     padding: 30px;
+}
+
+/* Estilos corregidos para dropdown de aplicaciones */
+.dropdown-aplicaciones {
+    position: relative !important;
+    width: 100% !important;
+}
+
+.dropdown-aplicaciones .dropdown-menu {
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1050 !important;
+    background: white !important;
+    border: 1px solid #ced4da !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    max-height: 200px !important;
+    overflow-y: auto !important;
+    width: 100% !important;
+    margin-top: 2px !important;
+    padding: 0 !important;
+    transform: none !important;
+    inset: auto !important;
+    float: none !important;
+    /* Estado inicial - oculto */
+    display: none !important;
+}
+
+/* Mostrar el dropdown cuando tenga la clase 'show' */
+.dropdown-aplicaciones .dropdown-menu.show {
+    display: block !important;
+}
+
+/* Ocultar el dropdown cuando tenga la clase 'hide' */
+.dropdown-aplicaciones .dropdown-menu.hide {
+    display: none !important;
+}
+
+.dropdown-aplicaciones .dropdown-item {
+    padding: 10px 15px !important;
+    cursor: pointer !important;
+    border-bottom: 1px solid #f8f9fa !important;
+    color: #495057 !important;
+    background: white !important;
+    transition: background-color 0.15s ease-in-out !important;
+    display: block !important;
+    width: 100% !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    border: none !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    margin: 0 !important;
+    text-align: left !important;
+}
+
+.dropdown-aplicaciones .dropdown-item:hover {
+    background-color: #e9ecef !important;
+    color: #16181b !important;
+}
+
+.dropdown-aplicaciones .dropdown-item:active,
+.dropdown-aplicaciones .dropdown-item:focus {
+    background-color: #007bff !important;
+    color: white !important;
+    outline: none !important;
+}
+
+.dropdown-aplicaciones .dropdown-item:last-child {
+    border-bottom: none !important;
+}
+
+.dropdown-aplicaciones .dropdown-item.text-muted {
+    color: #6c757d !important;
+    font-style: italic !important;
+    pointer-events: none !important;
+}
+
+/* Estilo para cuando el input tiene foco */
+.dropdown-aplicaciones input:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+}
+
+/* Scroll personalizado para el dropdown */
+.dropdown-aplicaciones .dropdown-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dropdown-aplicaciones .dropdown-menu::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.dropdown-aplicaciones .dropdown-menu::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.dropdown-aplicaciones .dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Asegurar que el dropdown no sea afectado por otros estilos */
+.dropdown-aplicaciones .dropdown-menu * {
+    box-sizing: border-box;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dropdown-aplicaciones .dropdown-menu {
+        font-size: 16px !important; /* Evitar zoom en iOS */
+    }
+    
+    .dropdown-aplicaciones .dropdown-item {
+        padding: 12px 15px !important;
+    }
 }
 
 /* Secciones de Información */
@@ -184,7 +297,7 @@
     }
 }
 
-/* Responsive */
+/* Responsive general */
 @media (max-width: 768px) {
     .modal-ticket-container {
         width: 95%;
@@ -198,31 +311,6 @@
     .info-section {
         padding: 15px;
     }
-}
-
-/* Estilos para dropdown de aplicaciones con búsqueda */
-.dropdown-aplicaciones {
-    position: relative;
-}
-
-.dropdown-aplicaciones .dropdown-menu {
-    max-height: 200px;
-    overflow-y: auto;
-    width: 100%;
-}
-
-.dropdown-aplicaciones .dropdown-item {
-    cursor: pointer;
-    padding: 8px 12px;
-    border-bottom: 1px solid #eee;
-}
-
-.dropdown-aplicaciones .dropdown-item:hover {
-    background-color: #f8f9fa;
-}
-
-.dropdown-aplicaciones .dropdown-item:last-child {
-    border-bottom: none;
 }
 </style>
 
@@ -245,39 +333,47 @@
                             </div>
                             <div class="col-md-6">
                                 <strong><i class="bi bi-hash me-2"></i>Catálogo:</strong> <?= $datosUsuario[0]['per_catalogo'] ?><br>
-                                <strong><i class="bi bi-telephone-fill me-2"></i>Teléfono:</strong> <?= $datosUsuario[0]['oper_celular_personal'] ?>
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-md-12">
                                 <strong><i class="bi bi-building me-2"></i>Dependencia:</strong> <?= $datosUsuario[0]['dep_desc_md'] ?>
                             </div>
                         </div>
                     </div>
 
-                    <form id="formTicket" method="POST" action="/<?= $_ENV['APP_NAME'] ?>/ticket/guardarAPI" class="p-4 bg-white rounded-3 shadow-sm border" enctype="multipart/form-data">
+                        <form id="formTicket" class="p-4 bg-white rounded-3 shadow-sm border">
                         <!-- Campos ocultos con datos de sesión -->
                         <input type="hidden" name="form_tic_usu" value="<?= $datosUsuario[0]['per_catalogo'] ?>">
                         <input type="hidden" name="tic_dependencia" value="<?= $dependenciaUsuario ?>">
                         <input type="hidden" name="form_estado" value="1">
                         
+                        <!-- Campo de aplicación con búsqueda mejorada -->
                         <div class="row g-4 mb-3">
                             <div class="col-md-12">
-                                <label for="tic_app" class="form-label">
-                                    <i class="bi bi-app-indicator me-2"></i>Aplicación con Problema
+                                <label for="tic_app_input" class="form-label">
+                                    <i class="bi bi-app-indicator me-2"></i>Aplicación con Problema <span class="text-danger">*</span>
                                 </label>
-                                <select class="form-control form-control-lg" id="tic_app" name="tic_app" required>
-                                    <option value="">Seleccione la aplicación con problemas...</option>
-                                </select>
+                                <div class="dropdown-aplicaciones position-relative">
+                                    <input type="text" 
+                                           class="form-control form-control-lg" 
+                                           id="tic_app_input" 
+                                           placeholder="Escriba el nombre de la aplicación..." 
+                                           autocomplete="off" 
+                                           required>
+                                    <input type="hidden" id="tic_app" name="tic_app" value="">
+                                    <div id="contenedorAplicaciones" class="dropdown-menu">
+                                        <!-- Las opciones aparecerán aquí dinámicamente -->
+                                    </div>
+                                </div>
                                 <div class="invalid-feedback"></div>
-                                <div class="form-text">Seleccione la aplicación que presenta el problema</div>
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>Escriba para buscar la aplicación que presenta el problema
+                                </div>
                             </div>
                         </div>
 
+                        <!-- Campos de contacto -->
                         <div class="row g-4 mb-3">
                             <div class="col-md-6">
                                 <label for="tic_correo_electronico" class="form-label">
-                                    <i class="bi bi-envelope me-2"></i>Correo Electrónico
+                                    <i class="bi bi-envelope me-2"></i>Correo Electrónico <span class="text-danger">*</span>
                                 </label>
                                 <input type="email" class="form-control form-control-lg" id="tic_correo_electronico" 
                                        name="tic_correo_electronico" placeholder="ejemplo@correo.com" maxlength="100" 
@@ -286,22 +382,27 @@
                                 <div class="form-text">Correo donde recibirá las actualizaciones del ticket</div>
                             </div>
                             <div class="col-md-6">
-                                <label for="tic_telefono_mostrar" class="form-label">
-                                    <i class="bi bi-telephone me-2"></i>Teléfono de Contacto
+                                <label for="tic_telefono" class="form-label">
+                                    <i class="bi bi-telephone me-2"></i>Teléfono de Contacto <span class="text-danger">*</span>
                                 </label>
                                 <input type="tel" class="form-control form-control-lg" id="tic_telefono" 
                                         name="tic_telefono" placeholder="12345678" maxlength="8" 
                                         value="<?= $datosUsuario[0]['oper_celular_personal'] ?>" required>
-                                <div class="form-text">Teléfono registrado en el sistema</div>
+                                <div class="invalid-feedback"></div>
+                                <div class="form-text">Teléfono de 8 dígitos para contacto</div>
                             </div>
                         </div>
 
+                        <!-- Descripción del problema -->
                         <div class="row g-4 mb-3">
                             <div class="col-md-12">
                                 <label for="tic_comentario_falla" class="form-label">
-                                    <i class="bi bi-chat-text me-2"></i>Descripción del Problema
+                                    <i class="bi bi-chat-text me-2"></i>Descripción del Problema <span class="text-danger">*</span>
                                 </label>
-                                <textarea class="form-control" id="tic_comentario_falla" name="tic_comentario_falla" rows="6" maxlength="2000" placeholder="Describa detalladamente el problema que está experimentando..." required></textarea>
+                                <textarea class="form-control" id="tic_comentario_falla" name="tic_comentario_falla" 
+                                          rows="6" maxlength="2000" 
+                                          placeholder="Describa detalladamente el problema que está experimentando..." 
+                                          required></textarea>
                                 <div class="invalid-feedback"></div>
                                 <div class="d-flex justify-content-between">
                                     <div class="form-text">
@@ -315,12 +416,14 @@
                             </div>
                         </div>
 
+                        <!-- Campo de imágenes -->
                         <div class="row g-4 mb-3">
                             <div class="col-md-12">
                                 <label for="tic_imagen" class="form-label">
                                     <i class="bi bi-image me-2"></i>Imágenes del Problema (Opcional)
                                 </label>
-                                <input type="file" class="form-control form-control-lg" id="tic_imagen" name="tic_imagen[]" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" multiple>
+                                <input type="file" class="form-control form-control-lg" id="tic_imagen" 
+                                       name="tic_imagen[]" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" multiple>
                                 <div class="invalid-feedback"></div>
                                 <div class="form-text">
                                     <strong>Formatos permitidos:</strong> JPG, PNG, GIF, WEBP | 
@@ -346,7 +449,8 @@
                             </div>
                         </div>
                         
-                        <div class="d-flex justify-content-center gap-3">
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-center gap-3 mt-4">
                             <button class="btn btn-success btn-lg px-4 shadow" type="submit" id="BtnEnviar">
                                 <i class="bi bi-send me-2"></i>Crear Ticket
                             </button>
@@ -356,6 +460,83 @@
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mostrar detalles del ticket creado -->
+<div id="modalTicket" class="modal-ticket-overlay" style="display: none;">
+    <div class="modal-ticket-container">
+        <div class="modal-ticket-card">
+            <!-- Header del Modal -->
+            <div class="modal-ticket-header">
+                <h4 class="modal-ticket-title">¡Ticket Creado Exitosamente!</h4>
+            </div>
+
+            <!-- Contenido del Modal -->
+            <div class="modal-ticket-content">
+                <!-- Información del Ticket y Usuario -->
+                <div class="row">
+                    <!-- Columna Izquierda: Información del Ticket -->
+                    <div class="col-md-6">
+                        <div class="info-section">
+                            <h6 class="info-section-title">Información del Ticket</h6>
+                            <div class="info-item">
+                                <strong>Número:</strong> <span id="ticketNumero"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Fecha:</strong> <span id="ticketFecha"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Estado:</strong> 
+                                <span class="badge-estado">CREADO</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna Derecha: Datos del Solicitante -->
+                    <div class="col-md-6">
+                        <div class="info-section">
+                            <h6 class="info-section-title">Solicitante</h6>
+                            <div class="info-item">
+                                <strong>Nombre:</strong> <span id="ticketUsuario"><?= $datosUsuario[0]['nombre'] ?></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Teléfono:</strong> <span id="ticketTelefono"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Correo:</strong> <span id="ticketCorreo"></span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Dependencia:</strong> <span id="ticketDependencia"><?= $datosUsuario[0]['dep_desc_md'] ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Descripción del Problema -->
+                <div class="descripcion-section">
+                    <h6 class="info-section-title">Descripción del Problema</h6>
+                    <div class="descripcion-content" id="ticketDescripcion">
+                        <!-- Aquí se mostrará la descripción -->
+                    </div>
+                </div>
+
+                <!-- Imágenes Adjuntas (si existen) -->
+                <div id="imagenSection" class="imagen-section" style="display: none;">
+                    <h6 class="info-section-title">Imágenes Adjuntas</h6>
+                    <div class="imagen-container" id="ticketImagenContainer">
+                        <!-- Las imágenes se mostrarán aquí -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer del Modal -->
+            <div class="modal-ticket-footer">
+                <button type="button" class="btn-cerrar-modal" onclick="cerrarModalTicket()">
+                    <i class="bi bi-check-circle me-2"></i>Entendido
+                </button>
             </div>
         </div>
     </div>

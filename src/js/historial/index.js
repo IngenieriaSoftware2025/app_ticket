@@ -11,7 +11,7 @@ const textoIndicador = document.getElementById('textoIndicador');
 
 // Estado actual de la vista
 let vistaActual = 'recibidos';
-let datatable; // Declarar la variable globalmente
+let datatable;
 
 // Función principal para buscar tickets
 const BuscarTicketsHistorial = async () => {
@@ -20,7 +20,6 @@ const BuscarTicketsHistorial = async () => {
 
     let url = `/app_ticket/historial/buscarAPI?tipo=${vistaActual}`;
     
-    // Agregar filtros de fecha si existen
     const params = new URLSearchParams();
     if (fechaInicio) params.append('fecha_inicio', fechaInicio);
     if (fechaFin) params.append('fecha_fin', fechaFin);
@@ -40,7 +39,6 @@ const BuscarTicketsHistorial = async () => {
         const { codigo, mensaje, data } = datos;
 
         if (codigo == 1) {
-            // Actualizar tabla con los datos
             if (datatable) {
                 datatable.clear().draw();
                 if (data && data.length > 0) {
@@ -48,7 +46,6 @@ const BuscarTicketsHistorial = async () => {
                 }
             }
             actualizarIndicador();
-            
             console.log(`Se cargaron ${data ? data.length : 0} tickets`);
         } else {
             await Swal.fire({
@@ -72,21 +69,17 @@ const BuscarTicketsHistorial = async () => {
     }
 }
 
-// Cambiar vista y actualizar botones
 const cambiarVista = async (nuevaVista) => {
     vistaActual = nuevaVista;
     actualizarBotones();
     await BuscarTicketsHistorial();
 }
 
-// Actualizar estilos de botones según la vista actual
 const actualizarBotones = () => {
-    // Limpiar todos los botones
     btnRecibidos.className = 'btn btn-outline-primary btn-lg px-4';
     btnFinalizados.className = 'btn btn-outline-success btn-lg px-4';
     btnRechazados.className = 'btn btn-outline-danger btn-lg px-4';
 
-    // Activar el botón correspondiente
     switch(vistaActual) {
         case 'recibidos':
             btnRecibidos.className = 'btn btn-primary btn-lg px-4';
@@ -100,7 +93,6 @@ const actualizarBotones = () => {
     }
 }
 
-// Actualizar texto del indicador
 const actualizarIndicador = () => {
     const iconos = {
         'recibidos': 'bi-plus-circle',
@@ -120,61 +112,105 @@ const actualizarIndicador = () => {
         'rechazados': 'Mostrando tickets rechazados'
     };
 
-    // Limpiar clases anteriores
     indicadorVista.className = `alert text-center ${clases[vistaActual]}`;
-    
-    // Actualizar contenido
     textoIndicador.innerHTML = `<i class="${iconos[vistaActual]} me-2"></i>${textos[vistaActual]}`;
 }
 
-// CORREGIR: Mostrar detalles del ticket en modal - SIN BOOTSTRAP JS
 const mostrarDetalleTicket = (ticket) => {
     try {
         console.log('Mostrando detalles del ticket:', ticket);
         
-        // Rellenar el modal con los datos del ticket
         document.getElementById('detalleNumero').textContent = ticket.form_tick_num || 'N/A';
         document.getElementById('detalleEstado').textContent = ticket.estado_descripcion || 'N/A';
         document.getElementById('detalleFecha').textContent = ticket.form_fecha_creacion || 'N/A';
         document.getElementById('detalleSolicitante').textContent = ticket.solicitante_nombre || 'N/A';
         document.getElementById('detalleEmail').textContent = ticket.tic_correo_electronico || 'N/A';
         document.getElementById('detalleDependencia').textContent = ticket.dependencia_nombre || 'N/A';
-        document.getElementById('detalleDescripcion').textContent = ticket.tic_comentario_falla || 'Sin descripción';
         
-        // Manejo de imagen
+        console.log('Descripción del ticket:', ticket.tic_comentario_falla);
+        console.log('Objeto ticket completo:', ticket);
+        
+        // Manejo mejorado de la descripción sin cambiar la consulta SQL
+        let descripcion = 'No se ha proporcionado una descripción para este ticket';
+        
+        if (ticket.tic_comentario_falla) {
+            const desc = ticket.tic_comentario_falla.toString().trim();
+            if (desc !== '' && desc !== 'null' && desc !== 'undefined') {
+                descripcion = desc;
+            }
+        }
+        
+        document.getElementById('detalleDescripcion').textContent = descripcion;
+        
         const imagenContainer = document.getElementById('detalleImagenContainer');
         const imagen = document.getElementById('detalleImagen');
         
-        if (ticket.tic_imagen && 
-            ticket.tic_imagen.trim() !== '' && 
-            ticket.tic_imagen !== 'null' && 
-            ticket.tic_imagen !== null) {
-            try {
-                const rutaImagen = ticket.tic_imagen.startsWith('/') ? ticket.tic_imagen : `/${ticket.tic_imagen}`;
-                imagen.src = rutaImagen;
-                imagen.onerror = () => {
-                    console.log('Error al cargar imagen:', rutaImagen);
+        console.log('Ruta de imagen en ticket:', ticket.tic_imagen);
+        
+        // Manejo mejorado de imágenes - verificar si realmente existe
+        if (ticket.tic_imagen) {
+            const imgPath = ticket.tic_imagen.toString().trim();
+            
+            if (imgPath !== '' && imgPath !== 'null' && imgPath !== 'undefined') {
+                try {
+                    // Probar múltiples rutas basadas en tu estructura
+                    const rutasPosibles = [
+                        `/uploads/tickets/2025/${imgPath}`, // Nueva ruta específica
+                        `/public/uploads/tickets/2025/${imgPath}`, // Nueva ruta específica
+                        `/app_ticket/uploads/tickets/2025/${imgPath}`, // Nueva ruta específica
+                        `/uploads/${imgPath}`,
+                        `/public/uploads/${imgPath}`,
+                        `/app_ticket/uploads/${imgPath}`,
+                        `/app_ticket/public/uploads/${imgPath}`,
+                        `/${imgPath}` // En caso de que venga la ruta completa
+                    ];
+                    
+                    let rutaActual = 0;
+                    
+                    const probarRuta = () => {
+                        if (rutaActual < rutasPosibles.length) {
+                            const rutaAProbar = rutasPosibles[rutaActual];
+                            console.log(`Probando ruta ${rutaActual + 1}/${rutasPosibles.length}:`, rutaAProbar);
+                            
+                            imagen.src = rutaAProbar;
+                            rutaActual++;
+                        } else {
+                            console.log('❌ No se pudo cargar la imagen con ninguna ruta');
+                            imagenContainer.style.display = 'none';
+                        }
+                    };
+                    
+                    imagen.onload = () => {
+                        console.log('✅ Imagen cargada correctamente desde:', imagen.src);
+                        imagenContainer.style.display = 'block';
+                    };
+                    
+                    imagen.onerror = probarRuta;
+                    
+                    // Iniciar la primera prueba
+                    probarRuta();
+                    
+                } catch (error) {
+                    console.log('Error al procesar imagen:', error);
                     imagenContainer.style.display = 'none';
-                };
-                imagen.onload = () => {
-                    imagenContainer.style.display = 'block';
-                };
-            } catch (error) {
-                console.log('Error al procesar imagen:', error);
+                }
+            } else {
+                console.log('📷 Campo de imagen vacío o null');
                 imagenContainer.style.display = 'none';
             }
         } else {
+            console.log('📷 No hay campo de imagen en el ticket');
             imagenContainer.style.display = 'none';
         }
         
-        // MOSTRAR MODAL SIN BOOTSTRAP JS - usando atributos HTML
         const modal = document.getElementById('modalDetalleTicket');
         modal.style.display = 'block';
         modal.classList.add('show');
         modal.setAttribute('aria-modal', 'true');
         modal.setAttribute('role', 'dialog');
+        modal.removeAttribute('aria-hidden');
+        modal.setAttribute('tabindex', '-1');
         
-        // Agregar backdrop
         let backdrop = document.querySelector('.modal-backdrop');
         if (!backdrop) {
             backdrop = document.createElement('div');
@@ -182,8 +218,10 @@ const mostrarDetalleTicket = (ticket) => {
             document.body.appendChild(backdrop);
         }
         
-        // Agregar clase al body
         document.body.classList.add('modal-open');
+        document.body.style.overflow = 'hidden';
+        
+        console.log('Modal abierto correctamente');
         
     } catch (error) {
         console.error('Error al mostrar detalles del ticket:', error);
@@ -197,25 +235,28 @@ const mostrarDetalleTicket = (ticket) => {
     }
 }
 
-// Función para cerrar modal manualmente
 const cerrarModal = () => {
     const modal = document.getElementById('modalDetalleTicket');
+    
     modal.style.display = 'none';
     modal.classList.remove('show');
     modal.removeAttribute('aria-modal');
     modal.removeAttribute('role');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('tabindex', '-1');
     
-    // Remover backdrop
     const backdrop = document.querySelector('.modal-backdrop');
     if (backdrop) {
         backdrop.remove();
     }
     
-    // Remover clase del body
     document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+    
+    console.log('Modal cerrado correctamente');
 }
 
-// Configuración de DataTable
 const inicializarDataTable = () => {
     datatable = new DataTable('#TableHistorialTickets', {
         dom: `
@@ -303,21 +344,16 @@ const inicializarDataTable = () => {
     });
 }
 
-// Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar DataTable
     inicializarDataTable();
     
-    // Event listeners para filtros
     document.getElementById('filtroFechaInicio').addEventListener('change', BuscarTicketsHistorial);
     document.getElementById('filtroFechaFin').addEventListener('change', BuscarTicketsHistorial);
 
-    // Event listeners para botones
     btnRecibidos.addEventListener('click', () => cambiarVista('recibidos'));
     btnFinalizados.addEventListener('click', () => cambiarVista('finalizados'));
     btnRechazados.addEventListener('click', () => cambiarVista('rechazados'));
 
-    // Event listener para botones de ver detalles
     document.addEventListener('click', function(event) {
         if (event.target.closest('.ver-detalle')) {
             event.preventDefault();
@@ -327,9 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('Índice de fila:', rowIndex);
             
-            // Obtener los datos de la fila desde DataTable
             const rowData = datatable.row(rowIndex).data();
-            
             console.log('Datos de la fila:', rowData);
             
             if (rowData) {
@@ -346,21 +380,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Event listener para cerrar modal
         if (event.target.closest('.btn-close') || event.target.closest('[data-bs-dismiss="modal"]')) {
             event.preventDefault();
             cerrarModal();
         }
     });
 
-    // Cerrar modal haciendo clic en el backdrop
     document.addEventListener('click', function(event) {
         if (event.target.classList.contains('modal-backdrop')) {
             cerrarModal();
         }
     });
 
-    // Cerrar modal con ESC
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             const modal = document.getElementById('modalDetalleTicket');
@@ -370,7 +401,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Inicializar vista
     vistaActual = 'recibidos';
     actualizarIndicador();
     actualizarBotones();

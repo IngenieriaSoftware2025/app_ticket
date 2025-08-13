@@ -30,6 +30,10 @@ class HistorialTicketsController extends ActiveRecord
             $fechaFin = $_GET['fecha_fin'] ?? null;
             $tipo = $_GET['tipo'] ?? self::TIPO_RECIBIDOS;
 
+            // Limpiar y validar fechas
+            $fechaInicio = trim($fechaInicio);
+            $fechaFin = trim($fechaFin);
+            
             // Validar tipo de vista
             $tiposValidos = [self::TIPO_RECIBIDOS, self::TIPO_FINALIZADOS, self::TIPO_RECHAZADOS];
             if (!in_array($tipo, $tiposValidos)) {
@@ -46,24 +50,30 @@ class HistorialTicketsController extends ActiveRecord
                 $condiciones[] = "ft.form_estado = " . self::ESTADO_ACTIVO;
             }
 
-            // Agregar filtros de fecha si existen
-            if ($fechaInicio) {
-                $condiciones[] = "ft.form_fecha_creacion >= '$fechaInicio'";
+            // Agregar filtros de fecha CORREGIDOS para Informix
+            if (!empty($fechaInicio) && self::validarFecha($fechaInicio)) {
+                // Para Informix DATETIME YEAR TO SECOND: 'YYYY-MM-DD HH:MM:SS'
+                $condiciones[] = "ft.form_fecha_creacion >= '{$fechaInicio} 00:00:00'";
             }
-            if ($fechaFin) {
-                $condiciones[] = "ft.form_fecha_creacion <= '$fechaFin'";
+            
+            if (!empty($fechaFin) && self::validarFecha($fechaFin)) {
+                $condiciones[] = "ft.form_fecha_creacion <= '{$fechaFin} 23:59:59'";
             }
 
             $where = implode(" AND ", $condiciones);
             
-            // Consulta principal optimizada
+            // Consulta principal CORREGIDA para manejar NULLs en Informix
             $sql = "SELECT ft.form_tick_num, 
                            ft.tic_comentario_falla, 
                            ft.tic_correo_electronico, 
                            ft.form_fecha_creacion, 
                            ft.tic_imagen,
                            ft.form_tic_usu,
-                           mp_solicitante.per_nom1 || ' ' || mp_solicitante.per_nom2 || ' ' || mp_solicitante.per_ape1 AS solicitante_nombre,
+                           CASE 
+                               WHEN mp_solicitante.per_nom2 IS NOT NULL AND mp_solicitante.per_nom2 != '' 
+                               THEN mp_solicitante.per_nom1 || ' ' || mp_solicitante.per_nom2 || ' ' || mp_solicitante.per_ape1
+                               ELSE mp_solicitante.per_nom1 || ' ' || mp_solicitante.per_ape1
+                           END AS solicitante_nombre,
                            md.dep_desc_lg AS dependencia_nombre
                     FROM formulario_ticket ft
                     INNER JOIN mper mp_solicitante ON ft.form_tic_usu = mp_solicitante.per_catalogo
@@ -71,6 +81,8 @@ class HistorialTicketsController extends ActiveRecord
                     WHERE $where 
                     ORDER BY ft.form_fecha_creacion DESC";
                     
+            error_log("SQL Query: " . $sql); // Para debugging
+            
             $tickets = self::fetchArray($sql);
             
             // Procesar tickets según el tipo solicitado
@@ -114,6 +126,9 @@ class HistorialTicketsController extends ActiveRecord
             ]);
 
         } catch (Exception $e) {
+            error_log("Error en HistorialTicketsController::buscarAPI: " . $e->getMessage());
+            error_log("Trace: " . $e->getTraceAsString());
+            
             http_response_code(400);
             echo json_encode([
                 'codigo' => 0,
@@ -123,27 +138,62 @@ class HistorialTicketsController extends ActiveRecord
         }
     }
 
+    // Validar formato de fecha para Informix
+    private static function validarFecha($fecha)
+    {
+        if (empty($fecha) || $fecha === null) {
+            return false;
+        }
+        
+        // Validar formato YYYY-MM-DD
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+            return false;
+        }
+        
+        // Validar que sea una fecha válida
+        $fechaObj = \DateTime::createFromFormat('Y-m-d', $fecha);
+        return $fechaObj && $fechaObj->format('Y-m-d') === $fecha;
+    }
+
     // Obtiene el estado de un ticket de la tabla tickets_asignados
     private static function obtenerEstadoTicket($ticket)
     {
-        $sqlAsignado = "SELECT ta.tic_id, ta.tic_encargado, ta.estado_ticket,
-                               mp_encargado.per_nom1 || ' ' || mp_encargado.per_nom2 || ' ' || mp_encargado.per_ape1 AS encargado_nombre,
-                               et.est_tic_desc AS estado_descripcion
-                        FROM tickets_asignados ta
-                        INNER JOIN mper mp_encargado ON ta.tic_encargado = mp_encargado.per_catalogo
-                        INNER JOIN estado_ticket et ON ta.estado_ticket = et.est_tic_id
-                        WHERE ta.tic_numero_ticket = '{$ticket['form_tick_num']}'";
-        
-        $asignado = self::fetchFirst($sqlAsignado);
-        
-        if ($asignado) {
-            // Si el ticket está asignado
-            $ticket['tic_id'] = $asignado['tic_id'];
-            $ticket['encargado_nombre'] = $asignado['encargado_nombre'];
-            $ticket['estado_descripcion'] = $asignado['estado_descripcion'];
-            $ticket['estado_ticket'] = $asignado['estado_ticket'];
-        } else {
-            // Si no está asignado, es un ticket recibido
+        try {
+            // Escapar el número de ticket para evitar inyección SQL
+            $numeroTicket = self::escaparString($ticket['form_tick_num']);
+            
+            $sqlAsignado = "SELECT ta.tic_id, ta.tic_encargado, ta.estado_ticket,
+                                   CASE 
+                                       WHEN mp_encargado.per_nom2 IS NOT NULL AND mp_encargado.per_nom2 != '' 
+                                       THEN mp_encargado.per_nom1 || ' ' || mp_encargado.per_nom2 || ' ' || mp_encargado.per_ape1
+                                       ELSE mp_encargado.per_nom1 || ' ' || mp_encargado.per_ape1
+                                   END AS encargado_nombre,
+                                   et.est_tic_desc AS estado_descripcion
+                            FROM tickets_asignados ta
+                            INNER JOIN mper mp_encargado ON ta.tic_encargado = mp_encargado.per_catalogo
+                            INNER JOIN estado_ticket et ON ta.estado_ticket = et.est_tic_id
+                            WHERE ta.tic_numero_ticket = '$numeroTicket' 
+                            AND ta.tic_situacion = 1";
+            
+            $asignado = self::fetchFirst($sqlAsignado);
+            
+            if ($asignado) {
+                // Si el ticket está asignado
+                $ticket['tic_id'] = $asignado['tic_id'];
+                $ticket['encargado_nombre'] = $asignado['encargado_nombre'];
+                $ticket['estado_descripcion'] = $asignado['estado_descripcion'];
+                $ticket['estado_ticket'] = $asignado['estado_ticket'];
+            } else {
+                // Si no está asignado, es un ticket recibido
+                $ticket['tic_id'] = $ticket['form_tick_num'];
+                $ticket['encargado_nombre'] = 'SIN ASIGNAR';
+                $ticket['estado_descripcion'] = 'RECIBIDO';
+                $ticket['estado_ticket'] = 1;
+            }
+            
+        } catch (Exception $e) {
+            error_log("Error en obtenerEstadoTicket: " . $e->getMessage());
+            // En caso de error, devolver como recibido
             $ticket['tic_id'] = $ticket['form_tick_num'];
             $ticket['encargado_nombre'] = 'SIN ASIGNAR';
             $ticket['estado_descripcion'] = 'RECIBIDO';
@@ -164,11 +214,18 @@ class HistorialTicketsController extends ActiveRecord
                 return $estadoTicket >= 1 && $estadoTicket <= 2;
                 
             case self::TIPO_FINALIZADOS:
-                // Estado 3 es finalizado
+                // Estado 3 es finalizado (según tu comentario: 3-Resuelto)
                 return $estadoTicket === 3;
                 
             default:
                 return false;
         }
+    }
+
+    // Método auxiliar para escapar strings (si no existe en ActiveRecord)
+    private static function escaparString($string)
+    {
+        // Implementar según tu método de conexión
+        return addslashes($string);
     }
 }

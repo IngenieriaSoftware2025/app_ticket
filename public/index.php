@@ -44,8 +44,8 @@ $router->post('/asignacion/asignarAPI', [AsignacionTicketController::class, 'asi
 //historial-tickets
 $router->get('/historial', [HistorialTicketsController::class, 'renderizarPagina']);
 $router->get('/historial/buscarAPI', [HistorialTicketsController::class, 'buscarAPI']);
-$router->get('/historial/buscarCreadosAPI', [HistorialTicketsController::class, 'buscarCreadosAPI']);
-$router->get('/historial/buscarFinalizadosAPI', [HistorialTicketsController::class, 'buscarFinalizadosAPI']);
+//$router->get('/historial/buscarCreadosAPI', [HistorialTicketsController::class, 'buscarCreadosAPI']);
+//$router->get('/historial/buscarFinalizadosAPI', [HistorialTicketsController::class, 'buscarFinalizadosAPI']);
 
 //estadisticas
 $router->get('/estadisticas', [EstadisticasController::class,'renderizarPagina']);

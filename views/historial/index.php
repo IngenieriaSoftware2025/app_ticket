@@ -70,8 +70,8 @@
     </div>
 </div>
 
-<!-- Modal para ver detalles del ticket -->
-<div class="modal fade" id="modalDetalleTicket" tabindex="-1" aria-labelledby="modalDetalleTicketLabel" aria-hidden="true">
+<!-- Modal para ver detalles del ticket - CORREGIDO -->
+<div class="modal fade" id="modalDetalleTicket" tabindex="-1" aria-labelledby="modalDetalleTicketLabel" aria-hidden="true" style="display: none;">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">

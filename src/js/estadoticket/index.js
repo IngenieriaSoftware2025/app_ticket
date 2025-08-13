@@ -3,7 +3,7 @@ import Swal from "sweetalert2";
 import DataTable from "datatables.net-bs5";
 import { lenguaje } from "../lenguaje";
 
-let estadoActual = 1; // Por defecto mostrar RECIBIDOS
+let estadoActual = 1; 
 
 const BuscarEstadoTickets = async () => {
     const fechaInicio = document.getElementById('filtroFechaInicio').value;
@@ -15,7 +15,6 @@ const BuscarEstadoTickets = async () => {
     if (fechaInicio) params.append('fecha_inicio', fechaInicio);
     if (fechaFin) params.append('fecha_fin', fechaFin);
     
-    // Siempre filtrar por el estado actual seleccionado
     params.append('estado', estadoActual);
 
     url += params.toString();
@@ -32,13 +31,11 @@ const BuscarEstadoTickets = async () => {
         if (codigo == 1) {
             console.log('Tickets encontrados:', data);
             
-            // Mostrar directamente los datos sin agrupaciones
             if (datatable) {
                 datatable.clear().draw();
                 datatable.rows.add(data).draw();
             }
             
-            // Actualizar el indicador
             actualizarIndicador(data.length);
         } else {
             await Swal.fire({
@@ -76,12 +73,10 @@ const actualizarIndicador = (cantidad) => {
 const cambiarEstado = (nuevoEstado) => {
     estadoActual = nuevoEstado;
     
-    // Actualizar estilos de botones
     document.querySelectorAll('.estado-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.estado == nuevoEstado) {
             btn.classList.add('active');
-            // Cambiar clases según el estado
             if (nuevoEstado == 1) {
                 btn.className = 'btn btn-primary btn-lg mx-2 estado-btn active';
             } else if (nuevoEstado == 2) {
@@ -90,7 +85,6 @@ const cambiarEstado = (nuevoEstado) => {
                 btn.className = 'btn btn-success btn-lg mx-2 estado-btn active';
             }
         } else {
-            // Restablecer clases de botones inactivos
             if (btn.dataset.estado == 1) {
                 btn.className = 'btn btn-outline-primary btn-lg mx-2 estado-btn';
             } else if (btn.dataset.estado == 2) {
@@ -101,7 +95,6 @@ const cambiarEstado = (nuevoEstado) => {
         }
     });
     
-    // Buscar tickets del nuevo estado
     BuscarEstadoTickets();
 }
 
@@ -110,11 +103,10 @@ const cambiarEstadoTicket = async (e) => {
     const estadoActual = parseInt(e.currentTarget.dataset.estado);
     const estadoActualNombre = e.currentTarget.dataset.estadoNombre;
 
-    // Nuevo mapeo simplificado
     const mapeoSiguienteEstado = {
         1: { id: 2, nombre: 'EN PROCESO', color: '#007bff' },
         2: { id: 3, nombre: 'FINALIZADO', color: '#28a745' },
-        3: null // Estado final
+        3: null 
     };
 
     const siguienteEstado = mapeoSiguienteEstado[estadoActual];
@@ -287,7 +279,7 @@ const datatable = new DataTable('#TableEstadoTickets', {
             data: null,
             width: '3%',
             render: (data, type, row, meta) => {
-                return meta.row + 1; // Numeración simple sin separadores
+                return meta.row + 1; 
             }
         },
         { 
@@ -340,7 +332,6 @@ const datatable = new DataTable('#TableEstadoTickets', {
                 
                 let botones = '';
 
-                // Botón Ver Detalles (siempre visible)
                 botones += `
                     <button class='btn btn-info btn-sm ver mx-1' 
                         data-bs-toggle="modal" 
@@ -351,11 +342,10 @@ const datatable = new DataTable('#TableEstadoTickets', {
                     </button>
                 `;
 
-                // Botón de Estado (cambiar al siguiente estado)
-                if (estadoId < 3) { // No mostrar si está FINALIZADO
+                if (estadoId < 3) { 
                     const mapeoColores = {
-                        1: 'btn-info',       // RECIBIDO
-                        2: 'btn-primary',    // EN PROCESO
+                        1: 'btn-info',       
+                        2: 'btn-primary',    
                     };
                     
                     const colorBoton = mapeoColores[estadoId] || 'btn-secondary';
@@ -371,8 +361,7 @@ const datatable = new DataTable('#TableEstadoTickets', {
                     `;
                 }
 
-                // Botón Rechazar (solo para estado RECIBIDO)
-                if (estadoId == 1) { // Solo RECIBIDO
+                if (estadoId == 1) { 
                     botones += `
                         <button class='btn btn-danger btn-sm rechazar mx-1' 
                             data-ticket="${ticketNumero}"
@@ -410,11 +399,9 @@ const mostrarDetalleTicket = (event) => {
     }
 }
 
-// Eventos para filtros de fecha
 document.getElementById('filtroFechaInicio').addEventListener('change', BuscarEstadoTickets);
 document.getElementById('filtroFechaFin').addEventListener('change', BuscarEstadoTickets);
 
-// Eventos para botones de estado
 document.querySelectorAll('.estado-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
         const nuevoEstado = parseInt(e.currentTarget.dataset.estado);
@@ -422,12 +409,10 @@ document.querySelectorAll('.estado-btn').forEach(btn => {
     });
 });
 
-// Mostrar los tickets automáticamente al cargar la página (RECIBIDOS por defecto)
 document.addEventListener('DOMContentLoaded', function() {
     BuscarEstadoTickets();
 });
 
-// Eventos del datatable
 datatable.on('click', '.ver', mostrarDetalleTicket);
 datatable.on('click', '.cambiar-estado', cambiarEstadoTicket);
 datatable.on('click', '.rechazar', rechazarTicket);
